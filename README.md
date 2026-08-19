@@ -1,6 +1,6 @@
 # Dynamics 365 Contact Center – Cost, Licensing & Plan Estimator
 
-Single-file HTML tool (no server, works offline) that estimates implementation, licensing and runtime costs for a Dynamics 365 Contact Center programme, with phasing, milestones, Capgemini roles & grades, and Excel / PDF export.
+Single-file HTML tool (no server, works offline) that estimates implementation, licensing and runtime costs for a Dynamics 365 Contact Center programme, with phasing, milestones, roles & grades, and Excel / PDF export.
 
 Owner: Peter Ruiter, Capgemini Netherlands.
 
