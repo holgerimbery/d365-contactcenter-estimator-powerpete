@@ -1,0 +1,70 @@
+{
+  "id": "capgemini",
+  "name": "Capgemini",
+  "mode": "full",
+  "title": "Dynamics 365 Contact Center — Cost & Plan Estimator | Capgemini",
+  "outFile": "D365-Contact-Center-Estimator-Capgemini.html",
+  "tokens": "  /* Capgemini brand palette (Brand book v1.0, March 2026) */\n  --cg-blue:#0058AB; --cg-light-blue:#1DB8F2; --cg-dark-blue:#121A38; --cg-turquoise:#00D5D0; --cg-yellow:#FEB100; --cg-teal:#00828E; --cg-terracotta:#BE4D00; --cg-deep-red:#8F3237;\n  --navy:var(--cg-dark-blue); --ink:#121A38; --muted:#5F6B85; --line:#D9DFEA; --bg:#F1F4F9; --card:#FFFFFF;\n  --blue:var(--cg-blue); --blue-soft:#E6EEF7; --teal:var(--cg-light-blue); --green:var(--cg-teal); --amber:var(--cg-terracotta); --amber-soft:#FFF3D6; --red:var(--cg-deep-red);\n  --impl:var(--cg-blue); --lic:var(--cg-light-blue); --run:var(--cg-turquoise); --ams:var(--cg-yellow);",
+  "headerLogo": "<a class=\"logo\" href=\"https://www.capgemini.com\" target=\"_blank\" rel=\"noopener\" title=\"Capgemini\">{{svg:assets/logo/capgemini-logo-white.svg}}</a>",
+  "promise": "<span class=\"promise\">Make it real.</span>",
+  "footer": "<span class=\"cg\"><img src=\"data:image/png;base64,{{b64:assets/logo/capgemini-spade.png}}\" alt=\"\" class=\"spade\">Capgemini · Make it real.</span><br>Indicative estimate. Microsoft list prices are editable defaults; confirm with Microsoft/CSP before quoting. Capgemini rates shown in yellow are placeholders and must be replaced with the applicable rate card.<br>\n<span class=\"creator\">Created by <b>Peter Ruiter</b>, Global Microsoft Dynamics 365 Contact Center lead &amp; CTO Dynamics 365 CX, Capgemini · <a href=\"mailto:peter.ruiter@capgemini.com?subject=D365%20Contact%20Center%20estimator\">Mail</a> · <a href=\"https://teams.microsoft.com/l/chat/0/0?users=peter.ruiter@capgemini.com\" target=\"_blank\" rel=\"noopener\">Chat on Teams</a> · <a href=\"https://powerpete.com\" target=\"_blank\" rel=\"noopener\">powerpete.com</a></span>",
+  "favicon": "assets/logo/capgemini-spade.png",
+  "pdf": {
+    "logoLight": "assets/logo/capgemini-logo-white.png",
+    "logoDark": "assets/logo/capgemini-logo-blue.png",
+    "logoAspect": 0.3267,
+    "band": [
+      18,
+      26,
+      56
+    ],
+    "accent": [
+      0,
+      88,
+      171
+    ],
+    "series": [
+      [
+        0,
+        88,
+        171
+      ],
+      [
+        29,
+        184,
+        242
+      ],
+      [
+        0,
+        213,
+        208
+      ],
+      [
+        254,
+        177,
+        0
+      ]
+    ],
+    "marker": [
+      190,
+      77,
+      0
+    ],
+    "kicker": "DYNAMICS 365 CONTACT CENTER  ·  COST, LICENSING & PLAN ESTIMATE",
+    "promise": "Make it real.",
+    "preparedBy": "Prepared by Capgemini. Indicative estimate: Microsoft list prices and Capgemini rates are assumptions to be validated before quoting.",
+    "footer": "indicative, not a quote",
+    "signoff": {
+      "text": "Make it real.",
+      "sub": ""
+    }
+  },
+  "contact": {
+    "name": "Peter Ruiter",
+    "role": "Global Microsoft Dynamics 365 Contact Center lead, Principal Solution Architect & CTO Dynamics 365 CX, Capgemini Netherlands",
+    "email": "peter.ruiter@capgemini.com",
+    "teams": "https://teams.microsoft.com/l/chat/0/0?users=peter.ruiter@capgemini.com",
+    "site": "https://powerpete.com"
+  },
+  "partner": "Capgemini"
+}

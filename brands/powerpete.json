@@ -1,0 +1,109 @@
+{
+  "id": "powerpete",
+  "name": "Power Pete",
+  "mode": "lite",
+  "title": "Dynamics 365 Contact Center — Licensing & Consumption Calculator | Power Pete",
+  "outFile": "D365-Contact-Center-Calculator-PowerPete.html",
+  "tokens": "  /* Power Pete palette (powerpete.com) */\n  --pp-purple:#3B2A9E; --pp-purple-deep:#251A6E; --pp-lilac:#7C69E8; --pp-blue:#0070AD; --pp-sky:#1DB8F2; --pp-mint:#2ED3B7; --pp-amber:#F5A623; --pp-coral:#E4572E; --pp-rose:#B5325A;\n  --navy:var(--pp-purple-deep); --ink:#1E1B3A; --muted:#63607F; --line:#DCD9EE; --bg:#F3F2FA; --card:#FFFFFF;\n  --blue:var(--pp-blue); --blue-soft:#E8ECF9; --teal:var(--pp-sky); --green:#1F8F7A; --amber:#B7791F; --amber-soft:#FFF4D6; --red:var(--pp-rose);\n  --impl:var(--pp-lilac); --lic:var(--pp-blue); --run:var(--pp-mint); --ams:var(--pp-amber);",
+  "headerLogo": "<a class=\"logo\" href=\"https://powerpete.com\" target=\"_blank\" rel=\"noopener\" title=\"Power Pete\">{{svg:assets/logo/powerpete/powerpete-logo-white.svg}}</a>",
+  "promise": "<span class=\"promise\">Tips &amp; best practices for Dynamics 365 and the Power Platform</span>",
+  "footer": "<span class=\"cg\"><img src=\"data:image/png;base64,{{b64:assets/logo/powerpete/powerpete-icon.png}}\" alt=\"\" class=\"spade\">Power Pete · <a href=\"https://powerpete.com\" target=\"_blank\" rel=\"noopener\">powerpete.com</a></span><br>Free licensing &amp; consumption calculator by <b>Peter Ruiter</b>, Microsoft MVP (Dynamics 365 Contact Center &amp; Copilot Studio). Microsoft list prices are editable defaults; confirm with Microsoft or your CSP before you buy. Implementation, plan and run figures are illustrative only.<br>\n<span class=\"creator\">Want a real implementation and run estimate? Peter Ruiter is the Global Microsoft Dynamics 365 Contact Center lead at Capgemini · <a href=\"mailto:peter.ruiter@capgemini.com?subject=D365%20Contact%20Center%20estimate\">Mail me</a> · <a href=\"https://teams.microsoft.com/l/chat/0/0?users=peter.ruiter@capgemini.com\" target=\"_blank\" rel=\"noopener\">Chat on Teams</a> · <a href=\"https://www.linkedin.com/in/peterruiter/\" target=\"_blank\" rel=\"noopener\">LinkedIn</a></span>",
+  "favicon": "assets/logo/powerpete/powerpete-icon.png",
+  "pdf": {
+    "logoLight": "assets/logo/powerpete/powerpete-logo-white.png",
+    "logoDark": "assets/logo/powerpete/powerpete-logo-purple.png",
+    "logoAspect": 0.1372,
+    "band": [
+      37,
+      26,
+      110
+    ],
+    "accent": [
+      124,
+      105,
+      232
+    ],
+    "series": [
+      [
+        124,
+        105,
+        232
+      ],
+      [
+        0,
+        112,
+        173
+      ],
+      [
+        46,
+        211,
+        183
+      ],
+      [
+        245,
+        166,
+        35
+      ]
+    ],
+    "marker": [
+      228,
+      87,
+      46
+    ],
+    "kicker": "DYNAMICS 365 CONTACT CENTER  ·  LICENSING & CONSUMPTION CALCULATOR",
+    "promise": "powerpete.com",
+    "preparedBy": "Free calculator from powerpete.com by Peter Ruiter (Microsoft MVP). Microsoft list prices are editable defaults; implementation, plan and run figures are illustrative.",
+    "footer": "powerpete.com · indicative, not a quote",
+    "signoff": {
+      "text": "Want a real implementation & run estimate?",
+      "sub": "Peter Ruiter is the Global Microsoft Dynamics 365 Contact Center lead at Capgemini · peter.ruiter@capgemini.com"
+    }
+  },
+  "contact": {
+    "name": "Peter Ruiter",
+    "role": "Global Microsoft Dynamics 365 Contact Center lead at Capgemini",
+    "email": "peter.ruiter@capgemini.com",
+    "teams": "https://teams.microsoft.com/l/chat/0/0?users=peter.ruiter@capgemini.com",
+    "site": "https://powerpete.com"
+  },
+  "partner": "Partner",
+  "grades": [
+    {
+      "code": "J",
+      "maps": "A",
+      "label": "Junior consultant",
+      "rate": 650
+    },
+    {
+      "code": "C",
+      "maps": "B",
+      "label": "Consultant",
+      "rate": 850
+    },
+    {
+      "code": "S",
+      "maps": "C",
+      "label": "Senior consultant",
+      "rate": 1050
+    },
+    {
+      "code": "L",
+      "maps": "D",
+      "label": "Lead consultant / architect",
+      "rate": 1250
+    },
+    {
+      "code": "P",
+      "maps": "E",
+      "label": "Principal architect",
+      "rate": 1450
+    },
+    {
+      "code": "D",
+      "maps": "F",
+      "label": "Engagement director",
+      "rate": 1700
+    }
+  ],
+  "gradesNote": "Average Western-European market day rates for a Microsoft partner (indicative, USD basis converted). Adjust to your market and supplier."
+}

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,__FAVICON__">
+<style>
+@font-face{font-family:"Ubuntu";font-weight:400;font-style:normal;src:url(data:font/ttf;base64,__FONT_REGULAR__) format("truetype")}
+@font-face{font-family:"Ubuntu";font-weight:500;font-style:normal;src:url(data:font/ttf;base64,__FONT_MEDIUM__) format("truetype")}
+@font-face{font-family:"Ubuntu Mono";font-weight:400;font-style:normal;src:url(data:font/ttf;base64,__FONTMONO_REGULAR__) format("truetype")}
+@font-face{font-family:"Ubuntu Mono";font-weight:700;font-style:normal;src:url(data:font/ttf;base64,__FONTMONO_BOLD__) format("truetype")}
+@font-face{font-family:"Ubuntu";font-weight:700;font-style:normal;src:url(data:font/ttf;base64,__FONT_BOLD__) format("truetype")}
+:root{
+__BRAND_TOKENS__
+  --mono:"Ubuntu Mono","Cascadia Mono","Consolas","Menlo",monospace;
+  --sans:"Ubuntu","Verdana","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans)}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{margin:0;font-weight:500;letter-spacing:0}
+h1{font-size:18px}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+h3{font-size:14px;margin-bottom:6px}
+p{margin:0 0 8px}
+a{color:var(--blue)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.tag{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;background:var(--blue-soft);color:var(--blue);vertical-align:middle}
+.tag.warn{background:var(--amber-soft);color:var(--amber)}
+.tag.ok{background:#E4F4EA;color:var(--green)}
+
+/* header */
+header{position:sticky;top:0;z-index:20;background:var(--navy);color:#fff;display:flex;align-items:center;gap:16px;padding:10px 20px}
+header .logo{display:flex;align-items:center;height:30px;padding-right:16px;margin-right:4px;border-right:1px solid rgba(255,255,255,.2)}
+header .logo svg{height:26px;width:auto;display:block}
+header .brand{display:flex;flex-direction:column;line-height:1.1}
+header .brand span{font-size:11px;opacity:.7;letter-spacing:.08em;text-transform:uppercase}
+header .grow{flex:1}
+header input.client{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;padding:6px 10px;border-radius:6px;min-width:260px}
+header input.client::placeholder{color:rgba(255,255,255,.55)}
+header select{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;padding:6px 8px;border-radius:6px}
+header select option{color:#000}
+.btn{background:#fff;color:var(--navy);border:1px solid var(--line);padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:600}
+.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn.primary:hover{filter:brightness(.92)}
+.btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.35)}
+.btn.sm{padding:3px 8px;font-size:12px;font-weight:500}
+.btn.danger{color:var(--red)}
+.btn:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+
+/* tabs */
+nav.tabs{display:flex;gap:2px;padding:0 20px;background:var(--navy);border-bottom:1px solid rgba(255,255,255,.1)}
+nav.tabs button{background:transparent;color:rgba(255,255,255,.7);border:0;padding:10px 14px;cursor:pointer;border-bottom:3px solid transparent;font-weight:600}
+nav.tabs button.active{color:#fff;border-bottom-color:var(--teal)}
+nav.tabs button:hover{color:#fff}
+
+/* layout */
+main{display:grid;grid-template-columns:1fr 340px;gap:20px;padding:20px;max-width:1500px;margin:0 auto}
+@media (max-width:1100px){main{grid-template-columns:1fr}.side{position:static}}
+.side{position:sticky;top:96px;align-self:start;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.card h2{margin-bottom:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px 20px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px 20px}
+@media (max-width:800px){.grid2,.grid3{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:12px;color:var(--muted)}
+.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:#fff}
+.field input[type=number],.field input.money{text-align:right;font-family:var(--mono)}
+.field .hint{font-size:11px;color:var(--muted)}
+input.ph{background:var(--amber-soft)}
+.note{background:var(--amber-soft);border-left:3px solid var(--amber);padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:12px}
+.contact-banner{background:linear-gradient(90deg,var(--navy),var(--blue));color:#fff;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.contact-banner b{font-weight:500}
+.contact-banner a{color:#fff;font-weight:500}
+.contact-banner .grow{flex:1}
+.note.info{background:var(--blue-soft);border-left-color:var(--blue)}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;white-space:nowrap}
+td.r,th.r{text-align:right}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.total td{font-weight:700;border-top:2px solid var(--ink);border-bottom:0}
+tr.sub td{color:var(--muted)}
+table input,table select{border:1px solid var(--line);border-radius:5px;padding:4px 6px;width:100%;min-width:60px;background:#fff}
+table input[type=number],table input.money{text-align:right;font-family:var(--mono)}
+table td.w-s{width:70px}table td.w-m{width:110px}table td.w-l{width:180px}
+.tbl-wrap{overflow-x:auto}
+.actions{display:flex;gap:8px;margin-top:10px}
+
+/* side summary */
+.kpi{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px dashed var(--line)}
+.kpi:last-child{border-bottom:0}
+.kpi .l{color:var(--muted);font-size:12px}
+.kpi .v{font-family:var(--mono);font-size:15px;font-weight:600}
+.kpi.big .v{font-size:22px;color:var(--navy)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:11px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+svg.chart{width:100%;height:auto;display:block}
+
+/* gantt */
+.gantt{font-size:12px}
+.gantt .row{display:grid;grid-template-columns:220px 1fr;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid #F0F2F6}
+.gantt .row.head{border-bottom:1px solid var(--line);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.gantt .lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gantt .lbl.wave{padding-left:14px;color:var(--muted)}
+.gantt .track{position:relative;height:18px;background:#F5F7FA;border-radius:3px}
+.gantt .bar{position:absolute;top:2px;height:14px;border-radius:3px;background:var(--blue);opacity:.9}
+.gantt .bar.wave{background:var(--teal)}
+.gantt .bar.hyper{background:var(--ams)}
+.gantt .ms{position:absolute;top:1px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:12px solid var(--red);transform:translateX(-7px)}
+.gantt .months{position:relative;height:16px}
+.gantt .months span{position:absolute;font-size:10px;color:var(--muted);border-left:1px solid var(--line);padding-left:3px;height:16px}
+.gantt .grid-line{position:absolute;top:0;bottom:0;border-left:1px solid #E7EAF0}
+
+.pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.pill.impl{background:#E3F0F9;color:var(--impl)}
+.pill.lic{background:#E0F5FB;color:#0E86AC}
+.pill.run{background:#EEF5DC;color:#5F7A1E}
+.pill.ams{background:#FDF0DA;color:#B0691A}
+footer{padding:20px;text-align:center;font-size:12px;color:var(--muted)}
+footer .cg{color:var(--blue);font-weight:500;font-size:13px}
+footer .creator{display:inline-block;margin-top:8px;color:var(--ink)}
+footer .creator a{color:var(--blue);text-decoration:none;font-weight:500}
+footer .creator a:hover{text-decoration:underline}
+footer .spade{height:14px;vertical-align:-2px;margin-right:6px}
+header .promise{font-size:13px;color:rgba(255,255,255,.85);white-space:nowrap;margin-right:6px}
+@media (max-width:1250px){header .promise{display:none}}
+.hidden{display:none !important}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(15,27,51,.55);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+.modal{background:#fff;border-radius:12px;width:min(860px,100%);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.modal header{position:static;background:var(--navy);border-radius:12px 12px 0 0;padding:14px 20px}
+.modal .body{padding:18px 20px}
+.modal .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 20px;border-top:1px solid var(--line);background:#F7F9FC;border-radius:0 0 12px 12px}
+.modal .q{display:grid;grid-template-columns:1fr 200px;gap:10px 16px;align-items:center;padding:8px 0;border-bottom:1px solid #F0F2F6}
+.modal .q .ql{font-size:13px}.modal .q .ql .hint{display:block;font-size:11px;color:var(--muted)}
+.modal .q input,.modal .q select{border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%}
+.modal .q input[type=number]{text-align:right;font-family:var(--mono)}
+.modal .qh{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--blue);font-weight:700;margin:14px 0 4px}
+.modal .qh:first-child{margin-top:0}
+.modal .result{background:var(--blue-soft);border-radius:8px;padding:10px 14px;margin-top:14px}
+.modal .result table td{border:0;padding:3px 6px}
+.wizbtn{float:right;margin-top:-4px}
+.presets{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media (max-width:900px){.presets{grid-template-columns:1fr 1fr}}
+.preset{border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;background:#fff;text-align:left;display:flex;flex-direction:column;gap:6px}
+.preset:hover{border-color:var(--blue)}
+.preset.active{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-soft)}
+.preset .t{font-weight:700;font-size:14px}.preset .s{font-size:12px;color:var(--muted);line-height:1.4}
+.preset .m{font-size:11px;font-family:var(--mono);color:var(--blue)}
+.chk{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #F0F2F6;font-size:13px}
+.chk select{width:120px;border:1px solid var(--line);border-radius:6px;padding:4px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--navy);color:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.3);display:flex;gap:10px;align-items:center;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:60;max-width:90vw}
+#toast.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+@media print{header,nav.tabs,.side,.actions,.btn{display:none !important}main{display:block}}
+</style>
+</head>
+<body>
+<header>
+  __BRAND_HEADER_LOGO__
+  <div class="brand"><h1>Dynamics 365 Contact Center</h1><span>Cost, licensing & plan estimator · v__VERSION__</span></div>
+  <div class="grow"></div>
+  __BRAND_PROMISE__
+  <input class="client" id="clientName" placeholder="Client / opportunity name" data-bind="meta.client" data-type="text">
+  <select data-bind="meta.currency" data-type="select" id="ccy">
+    <option value="EUR">EUR €</option><option value="USD">USD $</option><option value="GBP">GBP £</option>
+  </select>
+  <button class="btn ghost" id="btnSave">Save JSON</button>
+  <button class="btn ghost" id="btnLoad">Load JSON</button>
+  <input type="file" id="fileLoad" accept="application/json" class="hidden">
+  <button class="btn ghost" id="btnReset">Reset</button>
+  <button class="btn ghost" id="btnPdf">Export PDF</button>
+  <button class="btn primary" id="btnExport">Export to Excel</button>
+</header>
+<nav class="tabs" id="tabs">
+  <button data-tab="setup" class="active">1 Setup</button>
+  <button data-tab="lic">2 Licensing</button>
+  <button data-tab="impl">3 Implementation</button>
+  <button data-tab="plan">4 Plan & milestones</button>
+  <button data-tab="run">5 Runtime</button>
+  <button data-tab="summary">6 Summary & TCO</button>
+</nav>
+<main>
+  <section id="content"></section>
+  <aside class="side" id="side"></aside>
+</main>
+<div id="overlay" class="overlay hidden"></div>
+<footer>__BRAND_FOOTER__</footer>

@@ -1,0 +1,16 @@
+{
+  "name": "d365-contact-center-estimator",
+  "version": "0.7.0",
+  "description": "Dynamics 365 Contact Center cost, licensing and plan estimator – single self-contained HTML file",
+  "private": true,
+  "scripts": {
+    "build": "node tools/build.js",
+    "test": "node test/smoke.test.js dist/D365-Contact-Center-Estimator-Capgemini.html && node test/smoke.test.js dist/D365-Contact-Center-Calculator-PowerPete.html",
+    "release": "npm run build && npm test"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  },
+  "author": "Peter Ruiter <peter.ruiter@capgemini.com>",
+  "license": "UNLICENSED"
+}
