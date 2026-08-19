@@ -14,19 +14,6 @@ npm run build -- powerpete   # one brand only
 npm test             # jsdom smoke tests of both built files
 ```
 
-## Brands
-
-One code base, two builds, configured in `brands/<id>.json`:
-
-| Brand | Mode | For |
-|---|---|---|
-| `capgemini` | `full` | Internal / client work. Capgemini palette, logo, "Make it real." Full implementation, plan and run estimate. |
-| `powerpete` | `lite` | Public download from powerpete.com. Power Pete palette and text wordmark. Licensing & consumption are the headline; implementation, plan and AMS tabs stay but carry a contact banner pointing to Peter at Capgemini. Generic grades (junior → engagement director) with average market rates instead of Capgemini grades; `grades[].maps` translates the internal A–F preset codes. |
-
-A brand file holds: CSS tokens, header logo, promise/tagline, footer HTML, favicon, PDF palette/logos/copy, contact details. `{{svg:path}}` and `{{b64:path}}` inline assets. The JS reads `BRAND.mode` (`full` | `lite`) and `BRAND.contact`.
-
-`tools/build.js` inlines everything from `src/` into `src/template.html`:
-
 | Source | Becomes |
 |---|---|
 | `src/js/*.js` (sorted by filename) | one `<script>` bundle |
@@ -70,4 +57,4 @@ dist/                        build output, one file per brand
 
 ## Disclaimer
 
-Indicative estimates. Microsoft list prices are editable defaults; Capgemini day rates in the source are placeholders and must be replaced with the applicable rate card before sharing with a client.
+Indicative estimates. Microsoft list prices are editable defaults; Day rates in the source are placeholders and must be replaced with the applicable rate card before sharing with a client.
