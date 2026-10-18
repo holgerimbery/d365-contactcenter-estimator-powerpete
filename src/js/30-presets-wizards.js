@@ -98,7 +98,8 @@ const SKU_CATALOG=[
   ['Power Automate Premium (per user, for makers / heavy flows)', 15, 'user-month', ()=>5],
   ['Power Automate Process (per flow, unattended / system flows)', 150, 'month', ()=>2],
   ['Power Apps Premium (extra apps for back-office users)', 20, 'user-month', ()=>Number(S.lic.backoffice)||10],
-  ['Dynamics 365 Customer Voice (2,000 responses)', 200, 'month', ()=>1],
+  ['Dynamics 365 Customer Voice extra responses (1,000 / month; 2,000 included with CS Enterprise)', 100, 'month', ()=>1],
+  ['Unified Routing add-on (10,000 record routes / tenant / month)', 800, 'month', ()=>1],
   ['Microsoft Teams Enterprise (agents without a Microsoft 365 suite)', 5.25, 'user-month', ()=>0],
   ['Microsoft 365 Copilot (agent-facing, zero-rates internal agents)', 30, 'user-month', ()=>0],
   ['Dataverse database capacity add-on (per GB, beyond estimate)', 40, 'month', ()=>0],
@@ -119,13 +120,12 @@ const WIZ = {
       if(a.mix==='blended') full=ag; else if(a.mix==='voice') voice=ag; else if(a.mix==='digital') dig=ag; else { voice=Math.round(ag*Number(a.voiceShare)/100); dig=ag-voice; }
       const sup=Math.ceil(ag/Math.max(1,Number(a.span))); const bo=Math.round(ag/10*Number(a.boRatio));
       return [ ['lic.agentsFull',full,'Agents digital + voice'],['lic.agentsDigital',dig,'Agents digital only'],['lic.agentsVoice',voice,'Agents voice only'],['lic.supervisors',sup,'Supervisors'],['lic.backoffice',bo,'Back-office users'],['lic.teamMembers',Number(a.readers)||0,'Team Members'],['lic.existingCSE',Number(a.existing)||0,'Existing CSE users'] ]; } },
-  copilot:{ title:'Estimate Copilot Studio credits', intro:'Describe the self-service and AI use. Credit rates: classic answer 1, generative answer 2, action (lookup, flow, API) 5, Microsoft 365 tenant graph grounding 10, autonomous trigger 25.',
+  copilot:{ title:'Estimate Copilot Studio credits', intro:'Describe the self-service and AI use. Text rates: classic answer 1, generative answer 2, agent action (trigger, lookup, flow, API) 5, Microsoft 365 tenant graph grounding 10. Voice bots bill per minute with answers and actions included: classic voice 10, GenAI voice 35 credits per minute. Classic voice minutes are first covered by the 2,000 Intelligent Voicebot minutes per Contact Center Voice user.',
     q:[ {h:'Voice self-service (IVR / voice agent)'},
         {k:'calls', l:'Inbound calls per month', t:'num', d:60000},
         {k:'ivrPct', l:'Calls that go through a Copilot Studio IVR (%)', t:'num', d:100, hint:'0 if you keep a classic DTMF IVR outside Copilot Studio'},
-        {k:'ivrTurns', l:'Average bot turns per call', t:'num', d:4},
-        {k:'ivrGen', l:'Turns using generative answers (%)', t:'num', d:30},
-        {k:'ivrAct', l:'Actions per call (identify caller, look up order, …)', t:'num', d:1},
+        {k:'ivrMin', l:'Minutes per call with the voice bot', t:'num', d:1.5},
+        {k:'ivrTier', l:'Voice bot type', t:'sel', d:'classic', o:[['classic','Classic voice: topics & classic orchestration (10 credits/min)'],['genai','GenAI voice: generative orchestration (35 credits/min)']], hint:'Premium GenAI voice (75/min) is the Customer Assist Agent in the D365 AI agents wizard'},
         {h:'Digital self-service (chat / messaging bots)'},
         {k:'chats', l:'Chat & messaging sessions per month', t:'num', d:20000},
         {k:'botPct', l:'Sessions handled by a bot first (%)', t:'num', d:80},
@@ -134,17 +134,19 @@ const WIZ = {
         {k:'graphPct', l:'Generative turns grounded on Microsoft 365 tenant data (%)', t:'num', d:0, hint:'SharePoint / Graph grounding costs 10 credits per turn'},
         {k:'chatAct', l:'Actions per session', t:'num', d:1.5},
         {h:'Agent-facing and autonomous'},
-        {k:'cseAgents', l:'Agents on CS Enterprise (no included credits) using Copilot', t:'num', d:0, hint:'CS Premium users have 1,000 credits included'},
+        {k:'cseAgents', l:'Agents using a custom Copilot Studio agent-assist agent', t:'num', d:0, hint:'Built-in Copilot features in Customer Service and Contact Center are included in the licence; CS Premium credits don\'t cover custom agents'},
         {k:'perDay', l:'Copilot interactions per such agent per day', t:'num', d:10},
         {k:'auto', l:'Autonomous agent runs per month (email triage, case follow-up)', t:'num', d:0},
-        {k:'autoCr', l:'Credits per autonomous run (25 trigger + work)', t:'num', d:40} ],
+        {k:'autoCr', l:'Credits per autonomous run (trigger 5 + actions 5 each + answers)', t:'num', d:30} ],
     calc:a=>{ const n=k=>Number(a[k])||0;
-      const ivrS=n('calls')*n('ivrPct')/100, ivrC=ivrS*(n('ivrTurns')*(n('ivrGen')/100*2+(1-n('ivrGen')/100)*1)+n('ivrAct')*5);
+      const ivrMin=n('calls')*n('ivrPct')/100*n('ivrMin');
       const chS=n('chats')*n('botPct')/100, genT=n('chatTurns')*n('chatGen')/100, chC=chS*(genT*2+(n('chatTurns')-genT)*1+genT*n('graphPct')/100*10+n('chatAct')*5);
-      const sessions=ivrS+chS, per= sessions? (ivrC+chC)/sessions : 0;
+      const per= chS? chC/chS : 0;
       const extra=n('cseAgents')*n('perDay')*22*2 + n('auto')*n('autoCr');
-      return [ ['lic.copilot.sessions',Math.round(sessions),'Self-service sessions / month'],['lic.copilot.creditsPerSession',round(per,1),'Credits per session'],['lic.copilot.extraCredits',Math.round(extra),'Extra credits / month'] ]; } },
-  tel:{ title:'Estimate telephony volumes', intro:'Turns call volumes into minutes and numbers.',
+      const tier=a.ivrTier==='genai'?'genai':'classic';
+      return [ ['lic.copilot.voiceMin',Math.round(ivrMin),'Voice bot minutes / month'],['lic.copilot.voiceTier',tier,'Voice bot tier',v=>v==='genai'?'GenAI voice':'Classic voice'],
+               ['lic.copilot.sessions',Math.round(chS),'Digital self-service sessions / month'],['lic.copilot.creditsPerSession',round(per,1),'Credits per digital session'],['lic.copilot.extraCredits',Math.round(extra),'Extra credits / month'] ]; } },
+  tel:{ title:'Estimate telephony volumes', intro:'Turns call volumes into minutes and service numbers. Voice runs on Teams Phone extensibility; Azure Communication Services voice is retired for new deployments.',
     q:[ {k:'calls', l:'Inbound calls per month', t:'num', d:60000},
         {k:'contain', l:'Calls fully handled in self-service (%)', t:'num', d:20},
         {k:'ivrMin', l:'Minutes in IVR / queue per call', t:'num', d:1.5},
@@ -152,11 +154,15 @@ const WIZ = {
         {k:'outCalls', l:'Outbound calls per month', t:'num', d:6000},
         {k:'outMin', l:'Average outbound call length (minutes)', t:'num', d:4},
         {k:'countries', l:'Countries / sites with their own numbers', t:'num', d:2},
-        {k:'perCountry', l:'Service numbers per country (lines, brands, languages)', t:'num', d:4},
-        {k:'mode', l:'Voice connectivity', t:'sel', d:'acs', o:[['acs','Microsoft as carrier (ACS)'],['teams-cp','Teams Phone + Calling Plan'],['teams-oc','Teams Phone + Operator Connect / Direct Routing']]} ],
+        {k:'perCountry', l:'Service numbers per country (lines, brands, languages)', t:'num', d:4, hint:'Each service number needs its own Teams Phone Resource Account'},
+        {k:'tollFree', l:'Inbound calls on toll-free (freephone) numbers (%)', t:'num', d:0},
+        {k:'mobile', l:'Outbound calls to mobile numbers (%)', t:'num', d:50},
+        {k:'mode', l:'PSTN connectivity for Teams Phone', t:'sel', d:'teams-payg', o:[['teams-payg','Microsoft Teams pay-as-you-go Calling Plan'],['teams-oc','Operator Connect (keep your carrier, carrier-managed)'],['teams-dr','Direct Routing (own SBC and carrier)']]} ],
     calc:a=>{ const n=k=>Number(a[k])||0; const agentCalls=n('calls')*(1-n('contain')/100);
       const inbound=n('calls')*n('ivrMin')+agentCalls*n('aht'); const outbound=n('outCalls')*n('outMin');
-      return [ ['lic.tel.inboundMin',Math.round(inbound),'Inbound minutes / month'],['lic.tel.outboundMin',Math.round(outbound),'Outbound minutes / month'],['lic.tel.numbers',Math.round(n('countries')*n('perCountry')),'Service numbers'],['lic.tel.mode',a.mode,'Connectivity'] ]; } },
+      const modes={'teams-payg':'Teams pay-as-you-go Calling Plan','teams-oc':'Operator Connect','teams-dr':'Direct Routing'}; const mode=modes[a.mode]?a.mode:'teams-payg';
+      return [ ['lic.tel.inboundMin',Math.round(inbound),'Inbound minutes / month'],['lic.tel.outboundMin',Math.round(outbound),'Outbound minutes / month'],['lic.tel.numbers',Math.round(n('countries')*n('perCountry')),'Service numbers'],
+               ['lic.tel.tollFreePct',n('tollFree'),'Toll-free inbound %'],['lic.tel.outMobilePct',n('mobile'),'Outbound to mobile %'],['lic.tel.mode',mode,'Connectivity',v=>modes[v]] ]; } },
   dv:{ title:'Estimate Dataverse capacity', intro:'Storage grows until retention kicks in; the wizard estimates steady state at full retention.',
     q:[ {h:'Voice recordings & transcripts (file capacity)'},
         {k:'agentMin', l:'Agent talk minutes per month', t:'num', d:300000, hint:'Roughly inbound agent minutes + outbound minutes'},
@@ -320,7 +326,7 @@ const WIZ = {
   integ:{ title:'Pick integrations', intro:'Tick what the solution needs. Complexity drives effort: simple ≈ standard connector or lookup, medium ≈ custom API / Power Automate / custom connector, complex ≈ bidirectional, middleware, security or migration heavy.', catalog:true }
 };
 let wizOpen=null;
-function openWizard(id){ wizOpen=id; if(!S.wiz[id]){ S.wiz[id]={}; (WIZ[id].q||[]).forEach(q=>{ if(q.k) S.wiz[id][q.k]=q.d; }); }
+function openWizard(id){ wizOpen=id; if(!S.wiz[id]) S.wiz[id]={}; (WIZ[id].q||[]).forEach(q=>{ if(q.k && S.wiz[id][q.k]===undefined) S.wiz[id][q.k]=q.d; });
   if(id==='skus'){ const sel={}; SKU_CATALOG.forEach(([n,unit,per,qf])=>{ const cur=(S.lic.other||[]).find(o=>o.name===n); sel[n]={on:!!cur, qty:cur?cur.qty:qf()}; }); S.wiz.skus={sel}; }
   if(id==='integ'){ const sel={}; const names=new Set(INTEGRATION_CATALOG.map(c=>c[0])); (S.impl.integrations||[]).forEach(it=>{ if(names.has(it.name)) sel[it.name]={on:true,cx:it.complexity}; }); S.wiz.integ={sel}; }
   renderWizard(); }

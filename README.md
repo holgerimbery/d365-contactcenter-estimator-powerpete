@@ -48,6 +48,33 @@ dist/                        build output, one file per brand
 * Brand colours, logos, copy: `brands/<id>.json` (UI tokens and PDF palette both live there).
 * Bump `version` in `package.json`; it is written into the built file.
 
+## Pricing basis (v0.8.0, October 2026)
+
+Defaults follow the Microsoft price list and the Dynamics 365 Licensing Guide of October 2026 (USD, annual commitment). All values are editable in the tool.
+
+| Item | Default |
+|---|---|
+| CS Premium (incl. 1,000 Copilot credits/user for Dynamics 365 agents & tools only) | $195 |
+| CS Enterprise / Team Member | $105 / $8 |
+| Contact Center add-on for CS Enterprise: digital + voice / digital / voice | $90 / $75 / $75 |
+| Contact Center standalone (third-party CRM): digital + voice / digital / voice | $110 / $95 / $95 |
+| Teams Phone Standard per voice rep | $10 |
+| Teams Phone Resource Account per service number | free |
+| Teams pay-as-you-go Calling Plan per resource account (Zone 1 / Zone 2) | $3 / $4 |
+| Copilot credits: pack 25,000 / PAYG / pre-purchase | $200 / $0.01 / 5–20% off PAYG |
+| Copilot Studio voice per minute: classic / GenAI / premium GenAI | 10 / 35 / 75 credits |
+| Dataverse tenant default DB / file / log | 30 / 40 / 2 GB |
+| Dataverse accrual per full user: DB / file (35 GB file for CC Voice, CC, CS Premium) | 250 MB / 2 GB |
+
+Telephony rules:
+
+* Azure Communication Services voice (Direct Offer and Direct Routing) is no longer an option. Microsoft retires it on 30 Sep 2028, and tenants without an ACS resource can't get ACS numbers since 30 Sep 2026. All voice is modelled on Teams Phone extensibility.
+* Every voice rep needs Teams Phone (Standard add-on or Microsoft 365 E5) plus a Teams licence. Every service number needs a Teams Phone Resource Account with PSTN connectivity: the Teams pay-as-you-go Calling Plan, Operator Connect or Direct Routing.
+* Per-user Calling Plans can't be pooled for the contact center. Calling Plan numbers on resource accounts need the pay-as-you-go Calling Plan, and outbound minutes are metered for the whole organisation through Communications Credits or telco overage. Inbound to geographic numbers is included; toll-free inbound is metered.
+* Per-minute PSTN rates are indicative; use the Teams rate card or the carrier contract for the country.
+
+Saved estimates from v0.7 load with ACS or per-user Calling Plan telephony switched to the Teams pay-as-you-go Calling Plan, and Teams Phone at $8 updated to $10.
+
 ## Third-party
 
 * SheetJS Community Edition 0.18.5 – Apache-2.0

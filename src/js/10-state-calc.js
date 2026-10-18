@@ -8,18 +8,28 @@ const mapRoles = roles => roles.map(r=>({...r, grade:mapGrade(r.grade)}));
 /* ===================== STATE ===================== */
 const DEFAULT_STATE = () => ({
   meta: { client:'', preparedBy:'', version:'v0.1', currency:'EUR', fx:{USD:1, EUR:0.92, GBP:0.78},
-          termYears:3, startDate: nextMonthISO(), notes:'', priceBasis:'Microsoft list prices (USD, annual commitment), converted with editable FX. Verify before quoting.' },
+          termYears:3, startDate: nextMonthISO(), notes:'', priceBasis:'Microsoft list prices (USD, annual commitment, October 2026 price list and Dynamics 365 Licensing Guide), converted with editable FX. Telephony per-minute rates are indicative. Verify before quoting.' },
   lic: {
     crm:'d365',                // d365 | third
     agentsFull:120, agentsDigital:20, agentsVoice:0, supervisors:10, backoffice:30, teamMembers:20,
     existingCSE:0,             // users that already hold CS Enterprise (only CC add-on needed)
     strategy:'auto',           // auto | premium | attach
-    p: { premium:195, cse:105, ccFull:110, ccDigital:95, ccVoice:95, teamMember:8, csAttach:20 },
-    copilot: { model:'packs', sessions:20000, creditsPerSession:12, includedPerPremium:1000, packCredits:25000, packPrice:200, paygPerCredit:0.01, extraCredits:0 },
-    tel: { mode:'acs', inboundMin:120000, outboundMin:30000, numbers:20,
-           acsIn:0.013, acsOut:0.013, acsNumber:2,
-           teamsPhone:8, callingPlan:12, ocPerUser:0, ocIn:0.01, ocOut:0.012, teamsUsers:0 },
-    dv: { dbGB:60, fileGB:200, logGB:5, inclDb:10, inclDbPerUser:0.25, inclFile:20, inclFilePerUser:2, inclLog:2, pDb:40, pFile:2, pLog:10 },
+    // standalone CC SKUs (3rd-party CRM) and the cheaper CC add-ons for CS Enterprise users
+    p: { premium:195, cse:105, ccFull:110, ccDigital:95, ccVoice:95, ccAddFull:90, ccAddDigital:75, ccAddVoice:75, teamMember:8, csAttach:20 },
+    // Premium's 1,000 credits/user only cover Dynamics 365 agents & tools, not custom Copilot Studio bots.
+    // Voice bots bill per minute; classic voice is covered by the Intelligent Voicebot minutes in CC Voice.
+    copilot: { model:'packs', sessions:16000, creditsPerSession:18, extraCredits:0, includedPerPremium:1000,
+               voiceMin:90000, voiceTier:'classic', voicebotPerUser:2000, classicVoiceRate:10, genaiVoiceRate:35,
+               packCredits:25000, packPrice:200, paygPerCredit:0.01, prepaidDiscount:5 },
+    // Teams Phone extensibility is the only voice option (ACS voice retires 30 Sep 2028, no new ACS numbers since 30 Sep 2026).
+    // Per voice rep: Teams Phone Standard. Per service number: a free Teams Phone Resource Account plus PSTN on it:
+    // Teams pay-as-you-go Calling Plan (metered via Communications Credits / telco overage), Operator Connect or Direct Routing.
+    tel: { mode:'teams-payg', inboundMin:120000, outboundMin:30000, numbers:20,
+           teamsPhone:10, teamsUsers:0, e5Users:0,
+           paygRA:4, tollFreePct:0, tfIn:0.03, outMobilePct:50, outLandline:0.022, outMobile:0.085,
+           ocNumber:2, ocIn:0.005, ocOut:0.015, sbcMonthly:600 },
+    // tenant default 30/40/2 GB; accrual per full USL: 250 MB DB, 2 GB file (35 GB file for CC Voice, CC and CS Premium)
+    dv: { dbGB:60, fileGB:200, logGB:5, inclDb:30, inclDbPerUser:0.25, inclFile:40, inclFilePerUser:2, inclFileVoice:35, inclLog:2, pDb:40, pFile:2, pLog:10 },
     d365ai: {
       cia:{on:1, mining:5000, selfConv:0, selfMsgs:6, selfKA:50, selfTools:1, asstConv:40000, asstMsgs:8, asstKA:40, asstTools:1},
       cma:{on:0, emails:10000, followUps:1, realtime:0, updates:2, autoPct:50, kaPct:60, tools:1, tmplPct:30, waiting:1, cap:{cls:1,enr:1,res:1,fu:1}},
@@ -68,6 +78,14 @@ const DEFAULT_STATE = () => ({
 
 function nextMonthISO(){ const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()+2); return d.toISOString().slice(0,10); }
 let S = DEFAULT_STATE();
+// Saved estimates from before v0.8 may use retired telephony options (ACS, per-user Calling Plans).
+function migrateState(s){
+  const old=m=>m==='acs'||m==='teams-cp';
+  if(s.lic&&s.lic.tel&&old(s.lic.tel.mode)) s.lic.tel.mode='teams-payg';
+  if(s.lic&&s.lic.tel&&Number(s.lic.tel.teamsPhone)===8) s.lic.tel.teamsPhone=10;
+  if(s.wiz&&s.wiz.tel&&old(s.wiz.tel.mode)) s.wiz.tel.mode='teams-payg';
+  return s;
+}
 
 /* ===================== HELPERS ===================== */
 const $ = s => document.querySelector(s);
@@ -92,32 +110,37 @@ function calcLicensing(){
   const L=S.lic, p=L.p, rows=[];
   const third = L.crm==='third';
   const strat = L.strategy;
-  const attachFull = p.cse + p.ccFull, attachDig = p.cse + p.ccDigital, attachVoice = p.cse + p.ccVoice;
+  const n = v => Number(v)||0;
+  const attachFull = p.cse + n(p.ccAddFull), attachDig = p.cse + n(p.ccAddDigital), attachVoice = p.cse + n(p.ccAddVoice);
   const pick = (attachPrice, ccOnly, label) => {
     // returns [skuLabel, unitPrice] for a live-channel user in D365 CRM scenario
     if(third) return [label+' (standalone, 3rd-party CRM)', ccOnly];
     if(strat==='premium') return ['CS Premium', p.premium];
-    if(strat==='attach') return ['CS Enterprise + '+label, attachPrice];
-    return p.premium<=attachPrice ? ['CS Premium', p.premium] : ['CS Enterprise + '+label, attachPrice];
+    if(strat==='attach') return ['CS Enterprise + '+label+' add-on', attachPrice];
+    // on a tie Premium wins: same price, plus 1,000 Copilot credits per user
+    return p.premium<=attachPrice ? ['CS Premium', p.premium] : ['CS Enterprise + '+label+' add-on', attachPrice];
   };
-  const liveFull = Number(L.agentsFull)+Number(L.supervisors);
-  let existing = Math.min(Number(L.existingCSE)||0, liveFull);
-  const push=(name,qty,unit,note='')=>{ if(qty>0) rows.push({name,qty,unit,monthly:qty*unit,note}); };
+  const liveFull = n(L.agentsFull)+n(L.supervisors);
+  let existing = third ? 0 : Math.min(n(L.existingCSE), liveFull);
+  // voice: the SKU carries Contact Center Voice (35 GB Dataverse file and 2,000 voicebot minutes per user)
+  const push=(name,qty,unit,note='',voice=false)=>{ if(qty>0) rows.push({name,qty,unit,monthly:qty*unit,note,voice}); };
   // full agents + supervisors
-  if(!third && existing>0){ push('Contact Center add-on for existing CS Enterprise users', existing, p.ccFull, 'CSE already owned, add-on only'); }
+  if(existing>0){ push('Contact Center add-on (digital + voice) for existing CS Enterprise users', existing, n(p.ccAddFull), 'CSE already owned, add-on only', true); }
   const restFull = liveFull-existing;
   const [lblF, prF] = pick(attachFull, p.ccFull, 'Contact Center (digital + voice)');
-  push(lblF+' — agents & supervisors', restFull, prF);
+  push(lblF+' — agents & supervisors', restFull, prF, '', true);
   const [lblD, prD] = pick(attachDig, p.ccDigital, 'Contact Center Digital');
-  push(lblD+' — digital-only agents', Number(L.agentsDigital), prD);
+  push(lblD+' — digital-only agents', n(L.agentsDigital), prD, '', lblD.startsWith('CS Premium'));
   const [lblV, prV] = pick(attachVoice, p.ccVoice, 'Contact Center Voice');
-  push(lblV+' — voice-only agents', Number(L.agentsVoice), prV);
-  if(!third) push('CS Enterprise — back-office / case workers', Number(L.backoffice), p.cse);
-  push('Team Member — read/light users', Number(L.teamMembers), p.teamMember);
+  push(lblV+' — voice-only agents', n(L.agentsVoice), prV, '', true);
+  if(!third) push('CS Enterprise — back-office / case workers', n(L.backoffice), p.cse);
+  push('Team Member — read/light users', n(L.teamMembers), p.teamMember);
   const premiumUsers = rows.filter(r=>r.name.startsWith('CS Premium')).reduce((s,r)=>s+r.qty,0);
   const totalUsers = rows.reduce((s,r)=>s+r.qty,0);
+  const voiceUsers = rows.filter(r=>r.voice).reduce((s,r)=>s+r.qty,0);
+  const fullUsers = totalUsers - n(L.teamMembers);   // Team Members accrue no Dataverse capacity
   const monthly = rows.reduce((s,r)=>s+r.monthly,0);
-  return {rows, monthly, annual:monthly*12, premiumUsers, totalUsers, liveVoiceUsers: liveFull+Number(L.agentsVoice)};
+  return {rows, monthly, annual:monthly*12, premiumUsers, totalUsers, voiceUsers, fullUsers, liveVoiceUsers: liveFull+n(L.agentsVoice)};
 }
 
 /* ===================== CALC: D365 AI AGENTS (credits / month) ===================== */
@@ -149,48 +172,54 @@ function calcD365AI(){
 function calcConsumption(lic){
   const L=S.lic, out={rows:[]};
   // Copilot credits
-  const c=L.copilot;
+  const c=L.copilot, n=v=>Number(v)||0;
   const d365=calcD365AI(); out.d365=d365;
-  const csNeed = Number(c.sessions)*Number(c.creditsPerSession)+Number(c.extraCredits);
+  // Copilot Studio voice bills per minute; classic voice is covered by the CC Voice Intelligent Voicebot minutes pool
+  const voiceMin=n(c.voiceMin), voiceIncl=lic.voiceUsers*n(c.voicebotPerUser);
+  const voiceCredits = c.voiceTier==='genai' ? voiceMin*n(c.genaiVoiceRate) : Math.max(0, voiceMin-voiceIncl)*n(c.classicVoiceRate);
+  const csNeed = n(c.sessions)*n(c.creditsPerSession)+n(c.extraCredits)+voiceCredits;
   const need = csNeed + d365.total;
-  const incl = lic.premiumUsers*Number(c.includedPerPremium);
-  const over = Math.max(0, need-incl);
+  // CS Premium credits are for Dynamics 365 agents & tools only, so they never offset custom Copilot Studio agents
+  const incl = lic.premiumUsers*n(c.includedPerPremium), inclUsed=Math.min(incl, d365.total);
+  const d365Over = d365.total-inclUsed;
+  const over = csNeed + d365Over;
   let copilotCost=0, copilotNote='';
   if(over>0){
-    const packs = Math.ceil(over/Number(c.packCredits));
-    const packCost = packs*Number(c.packPrice), payg = over*Number(c.paygPerCredit);
-    if(c.model==='packs'){ copilotCost=packCost; copilotNote=packs+' pack(s) × '+fmtN(c.packCredits)+' credits'; }
-    else if(c.model==='payg'){ copilotCost=payg; copilotNote='pay-as-you-go'; }
-    else { copilotCost=Math.min(packCost,payg); copilotNote= packCost<=payg ? packs+' pack(s), cheaper than PAYG' : 'PAYG, cheaper than packs'; }
+    const packs = Math.ceil(over/n(c.packCredits));
+    const packCost = packs*n(c.packPrice), payg = over*n(c.paygPerCredit), prepaid = payg*(1-n(c.prepaidDiscount)/100);
+    const opts = {packs:[packCost, packs+' pack(s) × '+fmtN(c.packCredits)+' credits'], payg:[payg,'pay-as-you-go'], prepaid:[prepaid,'pre-purchase plan, '+fmtN(c.prepaidDiscount)+'% off PAYG']};
+    if(opts[c.model]){ [copilotCost, copilotNote]=opts[c.model]; }
+    else { const best=Object.entries(opts).sort((a,b)=>a[1][0]-b[1][0])[0]; [copilotCost, copilotNote]=best[1]; copilotNote+=', cheapest option'; }
   } else copilotNote='covered by included credits';
   const unit = over>0 ? copilotCost/over : 0;
-  out.copilot={need,csNeed,d365Need:d365.total,incl,over,cost:copilotCost,note:copilotNote,unit, oneoffCost: d365.oneoff*(unit||Number(c.paygPerCredit))};
-  out.rows.push({name:'Copilot credits — Copilot Studio agents', detail:fmtN(csNeed)+' credits (self-service, agent-facing, autonomous)', monthly: need? copilotCost*csNeed/need : 0});
-  out.rows.push({name:'Copilot credits — Dynamics 365 AI agents', detail:fmtN(d365.total)+' credits ('+(d365.rows.map(r=>r.name.split(' (')[0]).join(', ')||'none enabled')+')', monthly: need? copilotCost*d365.total/need : 0});
-  out.rows.push({name:'Copilot credits — included allowance', detail:fmtN(incl)+' credits from CS Premium users; overage '+fmtN(over)+' → '+copilotNote, monthly:0});
-  // Telephony
+  out.copilot={need,csNeed,d365Need:d365.total,incl,inclUsed,over,cost:copilotCost,note:copilotNote,unit, voiceMin, voiceIncl, voiceCredits, oneoffCost: d365.oneoff*(unit||n(c.paygPerCredit))};
+  const voiceDetail = voiceMin ? ' incl. voice bot '+fmtN(voiceCredits)+' ('+fmtN(voiceMin)+' min, '+(c.voiceTier==='genai'?'GenAI voice':'classic voice, '+fmtN(voiceIncl)+' voicebot min included')+')' : '';
+  out.rows.push({name:'Copilot credits — Copilot Studio agents', detail:fmtN(csNeed)+' credits (self-service, agent-facing, autonomous)'+voiceDetail, monthly: over? copilotCost*csNeed/over : 0});
+  out.rows.push({name:'Copilot credits — Dynamics 365 AI agents', detail:fmtN(d365.total)+' credits ('+(d365.rows.map(r=>r.name.split(' (')[0]).join(', ')||'none enabled')+'), '+fmtN(inclUsed)+' covered by CS Premium', monthly: over? copilotCost*d365Over/over : 0});
+  out.rows.push({name:'Copilot credits — included allowance', detail:fmtN(incl)+' credits from CS Premium users (Dynamics 365 agents only); overage '+fmtN(over)+' → '+copilotNote, monthly:0});
+  // Telephony: Teams Phone extensibility (ACS voice is retired for new deployments)
   const t=L.tel; let tel=0, telRows=[];
-  if(t.mode==='acs'){
-    telRows.push(['Azure Communication Services PSTN inbound', fmtN(t.inboundMin)+' min × '+fmt(t.acsIn,4), t.inboundMin*t.acsIn]);
-    telRows.push(['ACS PSTN outbound', fmtN(t.outboundMin)+' min × '+fmt(t.acsOut,4), t.outboundMin*t.acsOut]);
-    telRows.push(['Phone number rental', fmtN(t.numbers)+' × '+fmt(t.acsNumber,2), t.numbers*t.acsNumber]);
+  const users = Math.max(0, (n(t.teamsUsers)||lic.liveVoiceUsers) - n(t.e5Users));
+  telRows.push(['Teams Phone Standard (voice reps)', fmtN(users)+' × '+fmt(t.teamsPhone,2)+(n(t.e5Users)?' ('+fmtN(t.e5Users)+' covered by Microsoft 365 E5)':''), users*n(t.teamsPhone)]);
+  telRows.push(['Teams Phone Resource Account (one per service number)', fmtN(t.numbers)+' × free', 0]);
+  if(t.mode==='teams-payg'){
+    const tfMin=n(t.inboundMin)*n(t.tollFreePct)/100, mob=n(t.outMobilePct)/100;
+    const outRate=(1-mob)*n(t.outLandline)+mob*n(t.outMobile);
+    telRows.push(['Teams pay-as-you-go Calling Plan (on resource accounts)', fmtN(t.numbers)+' × '+fmt(t.paygRA,2), n(t.numbers)*n(t.paygRA)]);
+    telRows.push(['Inbound minutes to service numbers', fmtN(t.inboundMin)+' min, geographic included'+(tfMin?'; toll-free '+fmtN(tfMin)+' min × '+fmt(t.tfIn,4):''), tfMin*n(t.tfIn)]);
+    telRows.push(['Outbound minutes (Communications Credits / telco overage)', fmtN(t.outboundMin)+' min × '+fmt(outRate,4)+' blended ('+fmtN(t.outMobilePct)+'% mobile)', n(t.outboundMin)*outRate]);
   } else {
-    const users = Number(t.teamsUsers)||lic.liveVoiceUsers;
-    telRows.push(['Teams Phone Standard (voice agents)', fmtN(users)+' × '+fmt(t.teamsPhone,2), users*t.teamsPhone]);
-    if(t.mode==='teams-cp'){
-      telRows.push(['Microsoft Calling Plan', fmtN(users)+' × '+fmt(t.callingPlan,2), users*t.callingPlan]);
-    } else {
-      telRows.push(['Operator Connect / Direct Routing carrier fee', fmtN(users)+' × '+fmt(t.ocPerUser,2), users*t.ocPerUser]);
-      telRows.push(['Carrier inbound minutes', fmtN(t.inboundMin)+' min × '+fmt(t.ocIn,4), t.inboundMin*t.ocIn]);
-      telRows.push(['Carrier outbound minutes', fmtN(t.outboundMin)+' min × '+fmt(t.ocOut,4), t.outboundMin*t.ocOut]);
-    }
-    telRows.push(['Teams Phone Resource Account (service numbers)', fmtN(t.numbers)+' × free', 0]);
+    const lbl = t.mode==='teams-dr' ? 'Direct Routing carrier' : 'Operator Connect carrier';
+    telRows.push([lbl+' — number fee', fmtN(t.numbers)+' × '+fmt(t.ocNumber,2), n(t.numbers)*n(t.ocNumber)]);
+    telRows.push([lbl+' — inbound minutes', fmtN(t.inboundMin)+' min × '+fmt(t.ocIn,4), n(t.inboundMin)*n(t.ocIn)]);
+    telRows.push([lbl+' — outbound minutes', fmtN(t.outboundMin)+' min × '+fmt(t.ocOut,4), n(t.outboundMin)*n(t.ocOut)]);
+    if(t.mode==='teams-dr') telRows.push(['Session border controller (SBC / SBC-as-a-service)', 'per month', n(t.sbcMonthly)]);
   }
   telRows.forEach(r=>{ tel+=r[2]; out.rows.push({name:r[0], detail:r[1], monthly:r[2]}); });
-  out.telephony=tel;
-  // Dataverse
-  const d=L.dv, u=lic.totalUsers;
-  const inclDb=Number(d.inclDb)+Number(d.inclDbPerUser)*u, inclFile=Number(d.inclFile)+Number(d.inclFilePerUser)*u, inclLog=Number(d.inclLog);
+  out.telephony=tel; out.teamsPhoneUsers=users;
+  // Dataverse: tenant default + accrual per full USL (voice SKUs accrue 35 GB file)
+  const d=L.dv, fu=lic.fullUsers, vu=lic.voiceUsers;
+  const inclDb=n(d.inclDb)+n(d.inclDbPerUser)*fu, inclFile=n(d.inclFile)+n(d.inclFileVoice)*vu+n(d.inclFilePerUser)*(fu-vu), inclLog=n(d.inclLog);
   const dvRows=[
     ['Dataverse database overage', Math.max(0,d.dbGB-inclDb), d.pDb, inclDb],
     ['Dataverse file overage (recordings, attachments)', Math.max(0,d.fileGB-inclFile), d.pFile, inclFile],

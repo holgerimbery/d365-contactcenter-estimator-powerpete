@@ -1,6 +1,6 @@
 {
   "name": "d365-contact-center-estimator",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Dynamics 365 Contact Center cost, licensing and plan estimator – single self-contained HTML file",
   "private": true,
   "scripts": {

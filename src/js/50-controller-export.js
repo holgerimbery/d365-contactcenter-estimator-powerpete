@@ -28,7 +28,7 @@ document.addEventListener('click', e=>{
 $('#btnReset').addEventListener('click', ()=>{ const snap=clone(S); S=DEFAULT_STATE(); render(); toast('All inputs reset to defaults.', ()=>{ S=snap; render(); }); });
 $('#btnSave').addEventListener('click', ()=>{ const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}); dl(blob, fname('json')); });
 $('#btnLoad').addEventListener('click', ()=>$('#fileLoad').click());
-$('#fileLoad').addEventListener('change', e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const o=JSON.parse(r.result); S=deepMerge(DEFAULT_STATE(), o); render(); }catch(err){ toast('Could not read this file: '+err.message); } }; r.readAsText(f); e.target.value=''; });
+$('#fileLoad').addEventListener('change', e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const o=JSON.parse(r.result); S=migrateState(deepMerge(DEFAULT_STATE(), o)); render(); }catch(err){ toast('Could not read this file: '+err.message); } }; r.readAsText(f); e.target.value=''; });
 function deepMerge(base, o){ if(Array.isArray(o)) return o; if(o&&typeof o==='object'){ const out={...base}; Object.keys(o).forEach(k=>{ out[k]= (base&&typeof base[k]==='object'&&!Array.isArray(base[k])) ? deepMerge(base[k], o[k]) : o[k]; }); return out; } return o; }
 function fname(ext){ return ((S.meta.client||'D365-CC-estimate').replace(/[^a-z0-9]+/gi,'-'))+'-'+S.meta.version.replace(/[^a-z0-9.]+/gi,'')+'.'+ext; }
 function dl(blob, name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500); }
@@ -58,7 +58,8 @@ function exportXlsx(){
 
   // Licensing
   sheet('Licensing', [...hdr, ['Inputs'],['CRM',S.lic.crm==='third'?'Third-party CRM':'Dynamics 365 Customer Service'],['Strategy',S.lic.strategy],['Agents digital+voice',S.lic.agentsFull],['Agents digital only',S.lic.agentsDigital],['Agents voice only',S.lic.agentsVoice],['Supervisors',S.lic.supervisors],['Back-office',S.lic.backoffice],['Team Members',S.lic.teamMembers],['Existing CS Enterprise users',S.lic.existingCSE],[],
-    ['Unit prices per user / month ('+cur+')'],['CS Premium',M(S.lic.p.premium)],['CS Enterprise',M(S.lic.p.cse)],['Contact Center digital + voice',M(S.lic.p.ccFull)],['Contact Center digital',M(S.lic.p.ccDigital)],['Contact Center voice',M(S.lic.p.ccVoice)],['Team Member',M(S.lic.p.teamMember)],[],
+    ['Unit prices per user / month ('+cur+')'],['CS Premium',M(S.lic.p.premium)],['CS Enterprise',M(S.lic.p.cse)],['Team Member',M(S.lic.p.teamMember)],['CC add-on for CSE: digital + voice',M(S.lic.p.ccAddFull)],['CC add-on for CSE: digital',M(S.lic.p.ccAddDigital)],['CC add-on for CSE: voice',M(S.lic.p.ccAddVoice)],['Contact Center standalone: digital + voice',M(S.lic.p.ccFull)],['Contact Center standalone: digital',M(S.lic.p.ccDigital)],['Contact Center standalone: voice',M(S.lic.p.ccVoice)],[],
+    ['Telephony (Teams Phone extensibility)'],['PSTN connectivity',{'teams-payg':'Teams pay-as-you-go Calling Plan','teams-oc':'Operator Connect','teams-dr':'Direct Routing'}[S.lic.tel.mode]||S.lic.tel.mode],['Teams Phone Standard per voice rep',M(S.lic.tel.teamsPhone)],['Teams Phone licences counted',R.cons.teamsPhoneUsers],['Service numbers (resource accounts)',S.lic.tel.numbers],[],
     ['SKU','Users','Unit / month','Monthly','Annual','Note'],
     ...R.lic.rows.map(r=>[r.name,r.qty,M(r.unit),M(r.monthly),M(r.monthly*12),r.note||'']),
     ['Total licences',R.lic.totalUsers,'',M(R.lic.monthly),M(R.lic.annual),''],[],
@@ -66,7 +67,7 @@ function exportXlsx(){
     ...R.cons.rows.map(r=>[r.name,r.detail,M(r.monthly),M(r.monthly*12)]),
     ['Total consumption','',M(R.cons.monthly),M(R.cons.monthly*12)],[],
     ['Dynamics 365 AI agents','Breakdown','Credits / month'], ...R.cons.d365.rows.map(r=>[r.name,r.detail,r.credits]), ['Total D365 agent credits','',R.cons.d365.total],
-    ['Copilot Studio credits','',R.cons.copilot.csNeed],['Included credits (CS Premium)','',R.cons.copilot.incl],['Overage credits','',R.cons.copilot.over]
+    ['Copilot Studio credits','',R.cons.copilot.csNeed],['  of which voice bot','',R.cons.copilot.voiceCredits],['Included credits (CS Premium, D365 agents only)','',R.cons.copilot.incl],['Included credits used','',R.cons.copilot.inclUsed],['Overage credits','',R.cons.copilot.over]
   ], {cols:[52,40,16,16,16,30]});
 
   // Implementation
