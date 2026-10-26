@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "priceList": "October 2026",
+    "priceBasis": "Microsoft list prices (USD, annual commitment, October 2026 price list and Dynamics 365 Licensing Guide), converted with editable FX. Telephony per-minute rates are indicative. Verify before quoting.",
+    "fx": { "USD": 1, "EUR": 0.92, "GBP": 0.78 }
+  },
+  "lic": {
+    "p": {
+      "premium": 195,
+      "cse": 105,
+      "ccFull": 110,
+      "ccDigital": 95,
+      "ccVoice": 95,
+      "ccAddFull": 90,
+      "ccAddDigital": 75,
+      "ccAddVoice": 75,
+      "teamMember": 8,
+      "csAttach": 20
+    },
+    "copilot": {
+      "includedPerPremium": 1000,
+      "voicebotPerUser": 2000,
+      "callIntelligencePerUser": 6000,
+      "classicVoiceRate": 10,
+      "genaiVoiceRate": 35,
+      "packCredits": 25000,
+      "packPrice": 200,
+      "paygPerCredit": 0.01,
+      "prepaidDiscount": 5
+    },
+    "tel": {
+      "teamsPhone": 10,
+      "paygRA": 4,
+      "tfIn": 0.03,
+      "outLandline": 0.022,
+      "outMobile": 0.085,
+      "ocNumber": 2,
+      "ocIn": 0.005,
+      "ocOut": 0.015,
+      "sbcMonthly": 600
+    },
+    "dv": {
+      "inclDb": 30,
+      "inclDbPerUser": 0.25,
+      "inclFile": 40,
+      "inclFilePerUser": 2,
+      "inclFileVoice": 35,
+      "inclLog": 2,
+      "pDb": 40,
+      "pFile": 2,
+      "pLog": 10
+    }
+  },
+  "parameters": {
+    "copilotText": {
+      "classicAnswer": 1,
+      "generativeAnswer": 2,
+      "agentAction": 5,
+      "graphGrounding": 10
+    },
+    "d365ai": {
+      "reasoning": 2,
+      "knowledge": 3,
+      "action": 1,
+      "intentMining": 1.5,
+      "basicPrompt": 0.1,
+      "standardPrompt": 1.5,
+      "premiumPrompt": 10,
+      "premiumVoice": 75,
+      "flowAction": 0.13
+    },
+    "skuPrices": {
+      "powerBiPro": 14,
+      "powerBiPremium": 24,
+      "powerAutomatePremium": 15,
+      "powerAutomateProcess": 150,
+      "powerAppsPremium": 20,
+      "customerVoice": 100,
+      "unifiedRouting": 800,
+      "teamsEnterprise": 5.25,
+      "m365Copilot": 30,
+      "dataverseDatabase": 40,
+      "managedEnvironments": 50
+    },
+    "azure": {
+      "runtime": { "low": 60, "med": 350, "high": 1200 },
+      "nonProdFactor": 0.35,
+      "apim": 700,
+      "storagePerGB": 0.012,
+      "logsPerGB": 2.5,
+      "monitoringBase": 30,
+      "privateNetworking": 60,
+      "fabric": { "F2": 263, "F4": 526, "F8": 1051 }
+    }
+  },
+  "otherRunMonthly": 800
+}

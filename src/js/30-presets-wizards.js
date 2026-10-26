@@ -92,19 +92,22 @@ const INTEGRATION_CATALOG=[
   ['Outbound dialler / campaigns','M'],['Document management (attachments, letters)','S'],['Regional / country systems','M']
 ];
 const YN=[['1','Yes'],['0','No']];
-const SKU_CATALOG=[
-  ['Power BI Pro (supervisors / analysts)', 14, 'user-month', ()=>Number(S.lic.supervisors)||10],
-  ['Power BI Premium per user', 24, 'user-month', ()=>Number(S.lic.supervisors)||10],
-  ['Power Automate Premium (per user, for makers / heavy flows)', 15, 'user-month', ()=>5],
-  ['Power Automate Process (per flow, unattended / system flows)', 150, 'month', ()=>2],
-  ['Power Apps Premium (extra apps for back-office users)', 20, 'user-month', ()=>Number(S.lic.backoffice)||10],
-  ['Dynamics 365 Customer Voice extra responses (1,000 / month; 2,000 included with CS Enterprise)', 100, 'month', ()=>1],
-  ['Unified Routing add-on (10,000 record routes / tenant / month)', 800, 'month', ()=>1],
-  ['Microsoft Teams Enterprise (agents without a Microsoft 365 suite)', 5.25, 'user-month', ()=>0],
-  ['Microsoft 365 Copilot (agent-facing, zero-rates internal agents)', 30, 'user-month', ()=>0],
-  ['Dataverse database capacity add-on (per GB, beyond estimate)', 40, 'month', ()=>0],
-  ['Managed Environments / Power Platform premium request capacity', 50, 'month', ()=>1]
-];
+function skuCatalog(){
+  const p=S.parameters.skuPrices;
+  return [
+    ['Power BI Pro (supervisors / analysts)', p.powerBiPro, 'user-month', ()=>Number(S.lic.supervisors)||10],
+    ['Power BI Premium per user', p.powerBiPremium, 'user-month', ()=>Number(S.lic.supervisors)||10],
+    ['Power Automate Premium (per user, for makers / heavy flows)', p.powerAutomatePremium, 'user-month', ()=>5],
+    ['Power Automate Process (per flow, unattended / system flows)', p.powerAutomateProcess, 'month', ()=>2],
+    ['Power Apps Premium (extra apps for back-office users)', p.powerAppsPremium, 'user-month', ()=>Number(S.lic.backoffice)||10],
+    ['Dynamics 365 Customer Voice extra responses (1,000 / month; 2,000 included with CS Enterprise)', p.customerVoice, 'month', ()=>1],
+    ['Unified Routing add-on (10,000 record routes / tenant / month)', p.unifiedRouting, 'month', ()=>1],
+    ['Microsoft Teams Enterprise (agents without a Microsoft 365 suite)', p.teamsEnterprise, 'user-month', ()=>0],
+    ['Microsoft 365 Copilot (agent-facing, zero-rates internal agents)', p.m365Copilot, 'user-month', ()=>0],
+    ['Dataverse database capacity add-on (per GB, beyond estimate)', p.dataverseDatabase, 'month', ()=>0],
+    ['Managed Environments / Power Platform premium request capacity', p.managedEnvironments, 'month', ()=>1]
+  ];
+}
 const WIZ = {
   users:{ title:'Estimate users & licences', intro:'Answer in operational terms; the wizard turns this into licensed user counts.',
     q:[ {h:'Contact center size'},
@@ -120,29 +123,29 @@ const WIZ = {
       if(a.mix==='blended') full=ag; else if(a.mix==='voice') voice=ag; else if(a.mix==='digital') dig=ag; else { voice=Math.round(ag*Number(a.voiceShare)/100); dig=ag-voice; }
       const sup=Math.ceil(ag/Math.max(1,Number(a.span))); const bo=Math.round(ag/10*Number(a.boRatio));
       return [ ['lic.agentsFull',full,'Agents digital + voice'],['lic.agentsDigital',dig,'Agents digital only'],['lic.agentsVoice',voice,'Agents voice only'],['lic.supervisors',sup,'Supervisors'],['lic.backoffice',bo,'Back-office users'],['lic.teamMembers',Number(a.readers)||0,'Team Members'],['lic.existingCSE',Number(a.existing)||0,'Existing CSE users'] ]; } },
-  copilot:{ title:'Estimate Copilot Studio credits', intro:'Describe the self-service and AI use. Text rates: classic answer 1, generative answer 2, agent action (trigger, lookup, flow, API) 5, Microsoft 365 tenant graph grounding 10. Voice bots bill per minute with answers and actions included: classic voice 10, GenAI voice 35 credits per minute. Classic voice minutes are first covered by the 2,000 Intelligent Voicebot minutes per Contact Center Voice user.',
+  copilot:{ title:'Estimate Copilot Studio credits', get intro(){ const r=S.parameters.copilotText, c=S.lic.copilot; return `Describe the self-service and AI use. Text rates: classic answer ${fmtN(r.classicAnswer)}, generative answer ${fmtN(r.generativeAnswer)}, agent action (trigger, lookup, flow, API) ${fmtN(r.agentAction)}, Microsoft 365 tenant graph grounding ${fmtN(r.graphGrounding)}. Voice bots bill per minute with answers and actions included: classic voice ${fmtN(c.classicVoiceRate)}, GenAI voice ${fmtN(c.genaiVoiceRate)} credits per minute. Classic voice minutes are first covered by the ${fmtN(c.voicebotPerUser)} Intelligent Voicebot minutes per Contact Center Voice user.`; },
     q:[ {h:'Voice self-service (IVR / voice agent)'},
         {k:'calls', l:'Inbound calls per month', t:'num', d:60000},
         {k:'ivrPct', l:'Calls that go through a Copilot Studio IVR (%)', t:'num', d:100, hint:'0 if you keep a classic DTMF IVR outside Copilot Studio'},
         {k:'ivrMin', l:'Minutes per call with the voice bot', t:'num', d:1.5},
-        {k:'ivrTier', l:'Voice bot type', t:'sel', d:'classic', o:[['classic','Classic voice: topics & classic orchestration (10 credits/min)'],['genai','GenAI voice: generative orchestration (35 credits/min)']], hint:'Premium GenAI voice (75/min) is the Customer Assist Agent in the D365 AI agents wizard'},
+        {k:'ivrTier', l:'Voice bot type', t:'sel', d:'classic', get o(){ return [['classic',`Classic voice: topics & classic orchestration (${fmtN(S.lic.copilot.classicVoiceRate)} credits/min)`],['genai',`GenAI voice: generative orchestration (${fmtN(S.lic.copilot.genaiVoiceRate)} credits/min)`]]; }, get hint(){ return `Premium GenAI voice (${fmtN(S.parameters.d365ai.premiumVoice)}/min) is the Customer Assist Agent in the D365 AI agents wizard`; }},
         {h:'Digital self-service (chat / messaging bots)'},
         {k:'chats', l:'Chat & messaging sessions per month', t:'num', d:20000},
         {k:'botPct', l:'Sessions handled by a bot first (%)', t:'num', d:80},
         {k:'chatTurns', l:'Average bot turns per session', t:'num', d:6},
         {k:'chatGen', l:'Turns using generative answers (%)', t:'num', d:70},
-        {k:'graphPct', l:'Generative turns grounded on Microsoft 365 tenant data (%)', t:'num', d:0, hint:'SharePoint / Graph grounding costs 10 credits per turn'},
+        {k:'graphPct', l:'Generative turns grounded on Microsoft 365 tenant data (%)', t:'num', d:0, get hint(){ return `SharePoint / Graph grounding costs ${fmtN(S.parameters.copilotText.graphGrounding)} credits per turn`; }},
         {k:'chatAct', l:'Actions per session', t:'num', d:1.5},
         {h:'Agent-facing and autonomous'},
         {k:'cseAgents', l:'Agents using a custom Copilot Studio agent-assist agent', t:'num', d:0, hint:'Built-in Copilot features in Customer Service and Contact Center are included in the licence; CS Premium credits don\'t cover custom agents'},
         {k:'perDay', l:'Copilot interactions per such agent per day', t:'num', d:10},
         {k:'auto', l:'Autonomous agent runs per month (email triage, case follow-up)', t:'num', d:0},
-        {k:'autoCr', l:'Credits per autonomous run (trigger 5 + actions 5 each + answers)', t:'num', d:30} ],
-    calc:a=>{ const n=k=>Number(a[k])||0;
+        {k:'autoCr', l:'Credits per autonomous run (trigger + actions + answers)', t:'num', d:30} ],
+    calc:a=>{ const n=k=>Number(a[k])||0, r=S.parameters.copilotText;
       const ivrMin=n('calls')*n('ivrPct')/100*n('ivrMin');
-      const chS=n('chats')*n('botPct')/100, genT=n('chatTurns')*n('chatGen')/100, chC=chS*(genT*2+(n('chatTurns')-genT)*1+genT*n('graphPct')/100*10+n('chatAct')*5);
+      const chS=n('chats')*n('botPct')/100, genT=n('chatTurns')*n('chatGen')/100, chC=chS*(genT*r.generativeAnswer+(n('chatTurns')-genT)*r.classicAnswer+genT*n('graphPct')/100*r.graphGrounding+n('chatAct')*r.agentAction);
       const per= chS? chC/chS : 0;
-      const extra=n('cseAgents')*n('perDay')*22*2 + n('auto')*n('autoCr');
+      const extra=n('cseAgents')*n('perDay')*22*r.generativeAnswer + n('auto')*n('autoCr');
       const tier=a.ivrTier==='genai'?'genai':'classic';
       return [ ['lic.copilot.voiceMin',Math.round(ivrMin),'Voice bot minutes / month'],['lic.copilot.voiceTier',tier,'Voice bot tier',v=>v==='genai'?'GenAI voice':'Classic voice'],
                ['lic.copilot.sessions',Math.round(chS),'Digital self-service sessions / month'],['lic.copilot.creditsPerSession',round(per,1),'Credits per digital session'],['lic.copilot.extraCredits',Math.round(extra),'Extra credits / month'] ]; } },
@@ -190,7 +193,7 @@ const WIZ = {
     calc:a=>{ const n=k=>Number(a[k])||0; const cov={'8x5':1,'16x5':1.6,'24x7':2.5}[a.coverage]||1; const ch={low:.5,med:1,high:1.8}[a.change]||1;
       const func=Math.max(.5, round(n('agents')/150*cov + n('langs')*.1,1)); const dev=Math.max(.3, round(n('agents')/300*ch + n('ai')*.15,1)); const sdm=n('agents')>500? .5 : n('agents')>150? .3 : .2;
       return [ ['run.ams', mapRoles([{name:'Service delivery manager',grade:'D',fte:sdm},{name:'CC functional support (L2)',grade:'C',fte:func},{name:'Copilot Studio & integration support (L3)',grade:'B',fte:dev}]), 'AMS roles', v=>v.map(r=>r.name+' '+r.fte+' FTE').join(', ')] ]; } },
-  d365ai:{ title:'Configure Dynamics 365 AI agents', intro:'Prebuilt agents in Customer Service and Contact Center consume Copilot credits from the same tenant pool as Copilot Studio (1,000 credits per CS Premium user included). Formulas match Microsoft\'s agent usage estimator. Answer in monthly volumes.',
+  d365ai:{ title:'Configure Dynamics 365 AI agents', get intro(){ return `Prebuilt agents in Customer Service and Contact Center consume Copilot credits from the same tenant pool as Copilot Studio (${fmtN(S.lic.copilot.includedPerPremium)} credits per CS Premium user included). Formulas match Microsoft's agent usage estimator. Answer in monthly volumes.`; },
     q:[ {h:'Customer Intent Agent — mines intents from history, suggests intents & next steps in real time'},
         {k:'cia_on', l:'Use the Customer Intent Agent?', t:'sel', d:'1', o:YN},
         {k:'cia_mining', l:'Historical cases/conversations mined per month (intent library upkeep)', t:'num', d:5000},
@@ -232,7 +235,7 @@ const WIZ = {
         {k:'qaa_rtInputs', l:'Average messages per real-time evaluated conversation', t:'num', d:8},
         {k:'qaa_coachConv', l:'Conversations with real-time coaching per month', t:'num', d:0},
         {k:'qaa_coachInputs', l:'Average coaching prompts per coached conversation', t:'num', d:4},
-        {h:'Customer Assist Agent (Contact Center) — premium generative voice self-service, 75 credits per minute'},
+        {get h(){ return `Customer Assist Agent (Contact Center) — premium generative voice self-service, ${fmtN(S.parameters.d365ai.premiumVoice)} credits per minute`; }},
         {k:'caa_on', l:'Use the premium GenAI voice agent?', t:'sel', d:'0', o:YN, hint:'If yes, set the IVR share to 0 in the Copilot Studio wizard to avoid double counting'},
         {k:'caa_conv', l:'Voice self-service conversations per month', t:'num', d:0},
         {k:'caa_durSec', l:'Average duration (seconds)', t:'num', d:120},
@@ -314,27 +317,27 @@ const WIZ = {
         {k:'storeGB', l:'Archive storage for recordings / exports (GB)', t:'num', d:500},
         {k:'logsGB', l:'Monitoring ingest (Log Analytics / App Insights, GB per month)', t:'num', d:20},
         {k:'privnet', l:'Private networking (VNet integration, private endpoints)?', t:'sel', d:'0', o:YN},
-        {k:'fabric', l:'Fabric capacity for reporting', t:'sel', d:'none', o:[['none','No / covered elsewhere'],['F2','F2 (~$263/mo)'],['F4','F4 (~$526/mo)'],['F8','F8 (~$1,051/mo)']]} ],
-    calc:a=>{ const n=k=>Number(a[k])||0; const rt={low:60,med:350,high:1200}[a.integ]||350; const rows=[];
-      rows.push({name:'Azure integration runtime (prod)', amount:rt}); rows.push({name:'Azure integration runtime (non-prod × '+n('envs')+')', amount:Math.round(rt*0.35*n('envs'))});
-      if(n('apim')) rows.push({name:'API Management (Standard)', amount:700});
-      rows.push({name:'Archive storage '+fmtN(n('storeGB'))+' GB (cool tier)', amount:Math.round(n('storeGB')*0.012)});
-      rows.push({name:'Monitoring & logs '+fmtN(n('logsGB'))+' GB', amount:Math.round(n('logsGB')*2.5+30)});
-      if(n('privnet')) rows.push({name:'Private endpoints & VNet', amount:60});
-      const fc={F2:263,F4:526,F8:1051}[a.fabric]; if(fc) rows.push({name:'Fabric capacity '+a.fabric, amount:fc});
+        {k:'fabric', l:'Fabric capacity for reporting', t:'sel', d:'none', get o(){ return [['none','No / covered elsewhere'], ...Object.entries(S.parameters.azure.fabric).map(([k,v])=>[k,`${k} (~${fmt(v)}/mo)`])]; }} ],
+    calc:a=>{ const n=k=>Number(a[k])||0, p=S.parameters.azure; const rt=p.runtime[a.integ]??p.runtime.med; const rows=[];
+      rows.push({name:'Azure integration runtime (prod)', amount:rt}); rows.push({name:'Azure integration runtime (non-prod × '+n('envs')+')', amount:Math.round(rt*p.nonProdFactor*n('envs'))});
+      if(n('apim')) rows.push({name:'API Management (Standard)', amount:p.apim});
+      rows.push({name:'Archive storage '+fmtN(n('storeGB'))+' GB (cool tier)', amount:Math.round(n('storeGB')*p.storagePerGB)});
+      rows.push({name:'Monitoring & logs '+fmtN(n('logsGB'))+' GB', amount:Math.round(n('logsGB')*p.logsPerGB+p.monitoringBase)});
+      if(n('privnet')) rows.push({name:'Private endpoints & VNet', amount:p.privateNetworking});
+      const fc=p.fabric[a.fabric]; if(fc!==undefined) rows.push({name:'Fabric capacity '+a.fabric, amount:fc});
       return [ ['run.otherMonthly', rows, 'Monthly run rows', v=>v.map(r=>r.name+' '+fmt(r.amount)).join(' · ')], ['_tot', rows.reduce((s,r)=>s+r.amount,0), 'Total per month', v=>fmt(v)] ]; } },
   integ:{ title:'Pick integrations', intro:'Tick what the solution needs. Complexity drives effort: simple ≈ standard connector or lookup, medium ≈ custom API / Power Automate / custom connector, complex ≈ bidirectional, middleware, security or migration heavy.', catalog:true }
 };
 let wizOpen=null;
 function openWizard(id){ wizOpen=id; if(!S.wiz[id]) S.wiz[id]={}; (WIZ[id].q||[]).forEach(q=>{ if(q.k && S.wiz[id][q.k]===undefined) S.wiz[id][q.k]=q.d; });
-  if(id==='skus'){ const sel={}; SKU_CATALOG.forEach(([n,unit,per,qf])=>{ const cur=(S.lic.other||[]).find(o=>o.name===n); sel[n]={on:!!cur, qty:cur?cur.qty:qf()}; }); S.wiz.skus={sel}; }
+  if(id==='skus'){ const sel={}; skuCatalog().forEach(([n,unit,per,qf])=>{ const cur=(S.lic.other||[]).find(o=>o.name===n); sel[n]={on:!!cur, qty:cur?cur.qty:qf()}; }); S.wiz.skus={sel}; }
   if(id==='integ'){ const sel={}; const names=new Set(INTEGRATION_CATALOG.map(c=>c[0])); (S.impl.integrations||[]).forEach(it=>{ if(names.has(it.name)) sel[it.name]={on:true,cx:it.complexity}; }); S.wiz.integ={sel}; }
   renderWizard(); }
 function closeWizard(){ wizOpen=null; $('#overlay').classList.add('hidden'); $('#overlay').innerHTML=''; }
 function renderWizard(){
   const W=WIZ[wizOpen], a=S.wiz[wizOpen]; let body='';
   if(W.skuCatalog){
-    body=SKU_CATALOG.map(([name,unit,per,qf],i)=>{ const cur=(S.lic.other||[]).find(o=>o.name===name); const sel=a.sel[name]||{on:!!cur, qty:cur?cur.qty:qf()};
+    body=skuCatalog().map(([name,unit,per,qf],i)=>{ const cur=(S.lic.other||[]).find(o=>o.name===name); const sel=a.sel[name]||{on:!!cur, qty:cur?cur.qty:qf()};
       return `<label class="chk"><input type="checkbox" data-wsku="${i}" ${sel.on?'checked':''}> <span style="flex:1">${esc(name)} <span class="muted small">${fmt(unit,2)} / ${per}</span></span><input type="number" data-wskuq="${i}" value="${sel.qty}" style="width:90px;text-align:right" title="Quantity"></label>`; }).join('');
     body+=`<div class="result">Ticked items replace matching rows in “Other Microsoft SKUs”; rows you added yourself stay.</div>`;
   } else if(W.catalog){
@@ -356,8 +359,8 @@ function renderWizard(){
 function applyWizard(){
   const W=WIZ[wizOpen], a=S.wiz[wizOpen];
   if(W.apply){ W.apply(a); closeWizard(); render(); return; }
-  if(W.skuCatalog){ const names=new Set(SKU_CATALOG.map(c=>c[0])); const keep=(S.lic.other||[]).filter(o=>!names.has(o.name));
-    const picked=SKU_CATALOG.filter(([n])=>a.sel[n]&&a.sel[n].on).map(([n,unit,per])=>({name:n, qty:Number(a.sel[n].qty)||1, unit, per}));
+  if(W.skuCatalog){ const names=new Set(skuCatalog().map(c=>c[0])); const keep=(S.lic.other||[]).filter(o=>!names.has(o.name));
+    const picked=skuCatalog().filter(([n])=>a.sel[n]&&a.sel[n].on).map(([n,unit,per])=>({name:n, qty:Number(a.sel[n].qty)||1, unit, per}));
     S.lic.other=[...picked,...keep]; closeWizard(); render(); return; }
   if(W.catalog){ const names=new Set(INTEGRATION_CATALOG.map(c=>c[0])); const keep=(S.impl.integrations||[]).filter(it=>!names.has(it.name));
     const picked=INTEGRATION_CATALOG.filter(([n])=>a.sel[n]&&a.sel[n].on).map(([n,cx])=>{ const ex=(S.impl.integrations||[]).find(it=>it.name===n); return {name:n, complexity:a.sel[n].cx||cx, qty:ex?ex.qty:1}; });
@@ -368,7 +371,7 @@ function applyWizard(){
 document.addEventListener('change', e=>{
   const el=e.target;
   if(el.dataset.wq!==undefined){ S.wiz[wizOpen][el.dataset.wq]= el.tagName==='SELECT'?el.value:Number(el.value); renderWizard(); }
-  if(el.dataset.wsku!==undefined||el.dataset.wskuq!==undefined){ const i=Number(el.dataset.wsku??el.dataset.wskuq); const [name]=SKU_CATALOG[i]; const row=$('#overlay').querySelectorAll('.chk')[i]; S.wiz.skus.sel[name]={on:row.querySelector('input[type=checkbox]').checked, qty:Number(row.querySelector('input[type=number]').value)||1}; }
+  if(el.dataset.wsku!==undefined||el.dataset.wskuq!==undefined){ const i=Number(el.dataset.wsku??el.dataset.wskuq); const [name]=skuCatalog()[i]; const row=$('#overlay').querySelectorAll('.chk')[i]; S.wiz.skus.sel[name]={on:row.querySelector('input[type=checkbox]').checked, qty:Number(row.querySelector('input[type=number]').value)||1}; }
   if(el.dataset.wcat!==undefined||el.dataset.wcx!==undefined){ const i=Number(el.dataset.wcat??el.dataset.wcx); const [name,cx]=INTEGRATION_CATALOG[i]; const row=$('#overlay').querySelectorAll('.chk')[i]; S.wiz.integ.sel[name]={on:row.querySelector('input').checked, cx:row.querySelector('select').value}; }
 });
 document.addEventListener('click', e=>{

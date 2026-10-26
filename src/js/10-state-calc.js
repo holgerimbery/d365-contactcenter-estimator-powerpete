@@ -7,29 +7,27 @@ function mapGrade(code){ if(typeof BRAND==='undefined' || !BRAND.grades) return 
 const mapRoles = roles => roles.map(r=>({...r, grade:mapGrade(r.grade)}));
 /* ===================== STATE ===================== */
 const DEFAULT_STATE = () => ({
-  meta: { client:'', preparedBy:'', version:'v0.1', currency:'EUR', fx:{USD:1, EUR:0.92, GBP:0.78},
-          termYears:3, startDate: nextMonthISO(), notes:'', priceBasis:'Microsoft list prices (USD, annual commitment, October 2026 price list and Dynamics 365 Licensing Guide), converted with editable FX. Telephony per-minute rates are indicative. Verify before quoting.' },
+  meta: { client:'', preparedBy:'', version:'v0.1', currency:'EUR', ...clone(PRICING.meta),
+          termYears:3, startDate: nextMonthISO(), notes:'' },
+  parameters: clone(PRICING.parameters),
   lic: {
     crm:'d365',                // d365 | third
     agentsFull:120, agentsDigital:20, agentsVoice:0, supervisors:10, backoffice:30, teamMembers:20,
     existingCSE:0,             // users that already hold CS Enterprise (only CC add-on needed)
     strategy:'auto',           // auto | premium | attach
     // standalone CC SKUs (3rd-party CRM) and the cheaper CC add-ons for CS Enterprise users
-    p: { premium:195, cse:105, ccFull:110, ccDigital:95, ccVoice:95, ccAddFull:90, ccAddDigital:75, ccAddVoice:75, teamMember:8, csAttach:20 },
+    p: clone(PRICING.lic.p),
     // Premium's 1,000 credits/user only cover Dynamics 365 agents & tools, not custom Copilot Studio bots.
     // Voice bots bill per minute; classic voice is covered by the Intelligent Voicebot minutes in CC Voice.
-    copilot: { model:'packs', sessions:16000, creditsPerSession:18, extraCredits:0, includedPerPremium:1000,
-               voiceMin:90000, voiceTier:'classic', voicebotPerUser:2000, classicVoiceRate:10, genaiVoiceRate:35,
-               packCredits:25000, packPrice:200, paygPerCredit:0.01, prepaidDiscount:5 },
+    copilot: { model:'packs', sessions:16000, creditsPerSession:18, extraCredits:0,
+               voiceMin:90000, voiceTier:'classic', ...clone(PRICING.lic.copilot) },
     // Teams Phone extensibility is the only voice option (ACS voice retires 30 Sep 2028, no new ACS numbers since 30 Sep 2026).
     // Per voice rep: Teams Phone Standard. Per service number: a free Teams Phone Resource Account plus PSTN on it:
     // Teams pay-as-you-go Calling Plan (metered via Communications Credits / telco overage), Operator Connect or Direct Routing.
     tel: { mode:'teams-payg', inboundMin:120000, outboundMin:30000, numbers:20,
-           teamsPhone:10, teamsUsers:0, e5Users:0,
-           paygRA:4, tollFreePct:0, tfIn:0.03, outMobilePct:50, outLandline:0.022, outMobile:0.085,
-           ocNumber:2, ocIn:0.005, ocOut:0.015, sbcMonthly:600 },
+           teamsUsers:0, e5Users:0, tollFreePct:0, outMobilePct:50, ...clone(PRICING.lic.tel) },
     // tenant default 30/40/2 GB; accrual per full USL: 250 MB DB, 2 GB file (35 GB file for CC Voice, CC and CS Premium)
-    dv: { dbGB:60, fileGB:200, logGB:5, inclDb:30, inclDbPerUser:0.25, inclFile:40, inclFilePerUser:2, inclFileVoice:35, inclLog:2, pDb:40, pFile:2, pLog:10 },
+    dv: { dbGB:60, fileGB:200, logGB:5, ...clone(PRICING.lic.dv) },
     d365ai: {
       cia:{on:1, mining:5000, selfConv:0, selfMsgs:6, selfKA:50, selfTools:1, asstConv:40000, asstMsgs:8, asstKA:40, asstTools:1},
       cma:{on:0, emails:10000, followUps:1, realtime:0, updates:2, autoPct:50, kaPct:60, tools:1, tmplPct:30, waiting:1, cap:{cls:1,enr:1,res:1,fu:1}},
@@ -37,7 +35,7 @@ const DEFAULT_STATE = () => ({
       qaa:{on:1, closed:20000, rtConv:0, rtInputs:8, coachConv:0, coachInputs:4},
       caa:{on:0, conv:0, durSec:120, flows:1, actions:5, basic:0, standard:1, premium:0}
     },
-    other: [ {name:'Power BI Pro (supervisors / analysts)', qty:10, unit:14, per:'user-month'} ]
+    other: [ {name:'Power BI Pro (supervisors / analysts)', qty:10, unit:PRICING.parameters.skuPrices.powerBiPro, per:'user-month'} ]
   },
   impl: {
     model:'single',            // single | waves
@@ -72,17 +70,19 @@ const DEFAULT_STATE = () => ({
     daysPerFteYear:210,
     ams: mapRoles([ {name:'Service delivery manager', grade:'D', fte:.2}, {name:'CC functional support', grade:'C', fte:1}, {name:'Copilot Studio / integration support', grade:'B', fte:.5} ]),
     supportPct:0,              // % of annual licence value (e.g. Microsoft Unified)
-    otherMonthly: [ {name:'Azure (storage, Functions, monitoring)', amount:800} ]
+    otherMonthly: [ {name:'Azure (storage, Functions, monitoring)', amount:PRICING.otherRunMonthly} ]
   }
 });
 
 function nextMonthISO(){ const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()+2); return d.toISOString().slice(0,10); }
 let S = DEFAULT_STATE();
 // Saved estimates from before v0.8 may use retired telephony options (ACS, per-user Calling Plans).
-function migrateState(s){
+function migrateState(s, saved=s){
   const old=m=>m==='acs'||m==='teams-cp';
-  if(s.lic&&s.lic.tel&&old(s.lic.tel.mode)) s.lic.tel.mode='teams-payg';
-  if(s.lic&&s.lic.tel&&Number(s.lic.tel.teamsPhone)===8) s.lic.tel.teamsPhone=10;
+  if(s.lic&&s.lic.tel){
+    if(Number(s.lic.tel.teamsPhone)===8 && (!saved.parameters||old(s.lic.tel.mode))) s.lic.tel.teamsPhone=10;
+    if(old(s.lic.tel.mode)) s.lic.tel.mode='teams-payg';
+  }
   if(s.wiz&&s.wiz.tel&&old(s.wiz.tel.mode)) s.wiz.tel.mode='teams-payg';
   return s;
 }
@@ -145,25 +145,25 @@ function calcLicensing(){
 
 /* ===================== CALC: D365 AI AGENTS (credits / month) ===================== */
 function calcD365AI(){
-  const A=S.lic.d365ai||{}, n=v=>Number(v)||0, rows=[]; let total=0, oneoff=0;
-  const c=A.cia||{}; if(n(c.on)){ const mining=Math.round(n(c.mining)*1.5)*2;
-    const self=Math.round(n(c.selfConv)*n(c.selfMsgs)*n(c.selfKA)/100*3 + n(c.selfConv)*n(c.selfMsgs)*n(c.selfTools))*2;
-    const asst=Math.round(n(c.asstConv)*n(c.asstMsgs)*n(c.asstKA)/100*3 + n(c.asstConv)*n(c.asstTools))*2;
+  const A=S.lic.d365ai||{}, r=S.parameters.d365ai, n=v=>Number(v)||0, rows=[]; let total=0, oneoff=0;
+  const c=A.cia||{}; if(n(c.on)){ const mining=Math.round(n(c.mining)*r.intentMining)*r.reasoning;
+    const self=Math.round(n(c.selfConv)*n(c.selfMsgs)*n(c.selfKA)/100*r.knowledge + n(c.selfConv)*n(c.selfMsgs)*n(c.selfTools)*r.action)*r.reasoning;
+    const asst=Math.round(n(c.asstConv)*n(c.asstMsgs)*n(c.asstKA)/100*r.knowledge + n(c.asstConv)*n(c.asstTools)*r.action)*r.reasoning;
     rows.push({name:'Customer Intent Agent', detail:`intent mining ${fmtN(mining)} · self-service ${fmtN(self)} · assisted ${fmtN(asst)}`, credits:mining+self+asst}); }
   const m=A.cma||{}; if(n(m.on)){ const E=n(m.emails), F=n(m.followUps), RC=n(m.realtime), U=n(m.updates), auto=n(m.autoPct)/100, ka=n(m.kaPct)/100, T=n(m.tools), tp=n(m.tmplPct)/100, W=n(m.waiting); const cap=m.cap||{}; const H22=E*(1+F);
-    const cls = cap.cls? E*2 : 0;
-    const enr = cap.enr? ((E+RC)+(RC*U+E*F))*2 + (auto*(E+RC)+E*F)*1 : 0;
-    const res = cap.res? ((H22*ka*3+H22*T)+(H22*tp*3+H22*(1-tp)*1))*2 + H22*1 : 0;
-    const H42=(E+RC)*W*tp*3, H43=(E+RC)*W*(1-tp), H44=H43*8, H45=RC, H46=E+RC, H47=E*2;
-    const fu = cap.fu? (H42+H45)*2+(H43+H46)*1+(H44+H47)*1.5 : 0;
+    const cls = cap.cls? E*r.reasoning : 0;
+    const enr = cap.enr? ((E+RC)+(RC*U+E*F))*r.reasoning + (auto*(E+RC)+E*F)*r.action : 0;
+    const res = cap.res? ((H22*ka*r.knowledge+H22*T*r.action)+(H22*tp*r.knowledge+H22*(1-tp)*r.action))*r.reasoning + H22*r.action : 0;
+    const H42=(E+RC)*W*tp*r.knowledge, H43=(E+RC)*W*(1-tp), H44=H43*8, H45=RC, H46=E+RC, H47=E*2;
+    const fu = cap.fu? (H42+H45)*r.reasoning+(H43+H46)*r.action+(H44+H47)*r.standardPrompt : 0;
     rows.push({name:'Case Management Agent', detail:`classification ${fmtN(cls)} · enrichment ${fmtN(enr)} · resolution ${fmtN(res)} · follow-up & closure ${fmtN(fu)}`, credits:Math.ceil(cls+enr+res+fu)}); }
-  const k=A.kma||{}; if(n(k.on)){ const bulk=Math.ceil((n(k.bulk)+Math.ceil(n(k.bulk)/50)+n(k.unmPct)/100*n(k.bulk))*2); oneoff+=bulk;
-    const rt=(n(k.rtConv)+n(k.unmPct)/100*n(k.rtConv)+n(k.unmPct)/100*n(k.rtCases))*2 + (n(k.rtCases)+n(k.rtConv))*1; const cr=n(k.creation)*(1+n(k.revisions))*2;
+  const k=A.kma||{}; if(n(k.on)){ const bulk=Math.ceil((n(k.bulk)+Math.ceil(n(k.bulk)/50)+n(k.unmPct)/100*n(k.bulk))*r.reasoning); oneoff+=bulk;
+    const rt=(n(k.rtConv)+n(k.unmPct)/100*n(k.rtConv)+n(k.unmPct)/100*n(k.rtCases))*r.reasoning + (n(k.rtCases)+n(k.rtConv))*r.action; const cr=n(k.creation)*(1+n(k.revisions))*r.reasoning;
     rows.push({name:'Customer Knowledge Management Agent', detail:`real-time harvesting ${fmtN(rt)} · assisted creation ${fmtN(cr)} (+ one-off bulk harvesting ${fmtN(bulk)})`, credits:Math.ceil(rt+cr)}); }
-  const q=A.qaa||{}; if(n(q.on)){ const cl=n(q.closed)*2, rt=Math.floor(n(q.rtInputs)/4)*n(q.rtConv)*2, co=n(q.coachConv)*n(q.coachInputs)*2;
+  const q=A.qaa||{}; if(n(q.on)){ const cl=n(q.closed)*r.reasoning, rt=Math.floor(n(q.rtInputs)/4)*n(q.rtConv)*r.reasoning, co=n(q.coachConv)*n(q.coachInputs)*r.reasoning;
     rows.push({name:'Quality Assurance Agent', detail:`closed evaluations ${fmtN(cl)} · real-time evaluations ${fmtN(rt)} · coaching ${fmtN(co)}`, credits:Math.ceil(cl+rt+co)}); }
-  const a=A.caa||{}; if(n(a.on)){ const v=Math.ceil(n(a.conv)*n(a.durSec)*75/60), fl=Math.ceil(n(a.conv)*n(a.flows)*n(a.actions)*0.13), pr=Math.ceil(n(a.conv)*(n(a.basic)*0.1+n(a.standard)*1.5+n(a.premium)*10));
-    rows.push({name:'Customer Assist Agent (premium GenAI voice)', detail:`voice ${fmtN(v)} (75 credits/min) · flows ${fmtN(fl)} · prompts ${fmtN(pr)}`, credits:v+fl+pr}); }
+  const a=A.caa||{}; if(n(a.on)){ const v=Math.ceil(n(a.conv)*n(a.durSec)*r.premiumVoice/60), fl=Math.ceil(n(a.conv)*n(a.flows)*n(a.actions)*r.flowAction), pr=Math.ceil(n(a.conv)*(n(a.basic)*r.basicPrompt+n(a.standard)*r.standardPrompt+n(a.premium)*r.premiumPrompt));
+    rows.push({name:'Customer Assist Agent (premium GenAI voice)', detail:`voice ${fmtN(v)} (${fmtN(r.premiumVoice)} credits/min) · flows ${fmtN(fl)} · prompts ${fmtN(pr)}`, credits:v+fl+pr}); }
   rows.forEach(r=>total+=r.credits);
   return {rows, total, oneoff};
 }
