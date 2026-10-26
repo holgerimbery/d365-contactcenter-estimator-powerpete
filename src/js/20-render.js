@@ -78,7 +78,7 @@ function renderSetup(R){
 
 /* ===================== TAB: LICENSING ===================== */
 function renderLic(R){
-  const L=S.lic, lic=R.lic, c=L.copilot, t=L.tel, d=L.dv;
+  const L=S.lic, lic=R.lic, c=L.copilot, t=L.tel, d=L.dv, text=S.parameters.copilotText;
   const third=L.crm==='third';
   return `
   <div class="card">${wizBtn('users')}<h2>Platform & users</h2>
@@ -99,7 +99,7 @@ function renderLic(R){
   </div>
   <div class="card"><h2>Licence prices (per user / month, ${CCY()})</h2>
     <div class="grid3">
-      ${field('CS Premium (CSE + CC digital + voice, incl. 1,000 Copilot credits/user for D365 agents)', inp('lic.p.premium','money'))}
+      ${field(`CS Premium (CSE + CC digital + voice, incl. ${fmtN(c.includedPerPremium)} Copilot credits/user for D365 agents)`, inp('lic.p.premium','money'))}
       ${field('CS Enterprise', inp('lic.p.cse','money'))}
       ${field('Team Member', inp('lic.p.teamMember','money'))}
       ${field('CC add-on for CSE: digital + voice', inp('lic.p.ccAddFull','money'), 'Only for users who hold CS Enterprise')}
@@ -109,7 +109,7 @@ function renderLic(R){
       ${field('Contact Center standalone: digital', inp('lic.p.ccDigital','money'))}
       ${field('Contact Center standalone: voice', inp('lic.p.ccVoice','money'))}
     </div>
-    <p class="small muted" style="margin-top:8px">October 2026 list prices. CC Voice and the full CC licence include 2,000 Intelligent Voicebot minutes, 6,000 call intelligence minutes and 35 GB Dataverse file per user/month (pooled per tenant). Teams Phone is not included; see Telephony.</p>
+    <p class="small muted" style="margin-top:8px">${esc(S.meta.priceList)} list prices. CC Voice and the full CC licence include ${fmtN(c.voicebotPerUser)} Intelligent Voicebot minutes, ${fmtN(c.callIntelligencePerUser)} call intelligence minutes and ${fmtN(d.inclFileVoice)} GB Dataverse file per user/month (pooled per tenant). Teams Phone is not included; see Telephony.</p>
   </div>
   <div class="card"><h2>Licence result (100% ramp)</h2>
     <div class="tbl-wrap"><table>
@@ -122,7 +122,7 @@ function renderLic(R){
   <div class="card">${wizBtn('copilot')}<h2>Copilot Studio credits</h2>
     <div class="grid3">
       ${field('Digital self-service sessions / month (chat, messaging bots)', inp('lic.copilot.sessions','num',{step:100}))}
-      ${field('Average credits per session', inp('lic.copilot.creditsPerSession','num',{step:1}), 'Classic answer 1, generative answer 2, agent action 5, tenant graph grounding 10; blend for your flows')}
+      ${field('Average credits per session', inp('lic.copilot.creditsPerSession','num',{step:1}), `Classic answer ${fmtN(text.classicAnswer)}, generative answer ${fmtN(text.generativeAnswer)}, agent action ${fmtN(text.agentAction)}, tenant graph grounding ${fmtN(text.graphGrounding)}; blend for your flows`)}
       ${field('Extra credits / month (custom agent-assist, autonomous agents)', inp('lic.copilot.extraCredits','num',{step:1000}))}
       ${field('Voice bot minutes / month (Copilot Studio IVR)', inp('lic.copilot.voiceMin','num',{step:1000}), 'Billed per minute; actions and answers inside the call are included')}
       ${field('Voice bot tier', inp('lic.copilot.voiceTier','select',{options:[['classic','Classic voice (classic orchestration)'],['genai','GenAI voice (generative orchestration)']]}), 'Premium GenAI voice: Customer Assist Agent below')}
@@ -132,7 +132,7 @@ function renderLic(R){
       ${field('Purchase model for overage', inp('lic.copilot.model','select',{options:[['auto','Cheapest option'],['packs','Credit packs'],['payg','Pay-as-you-go'],['prepaid','Pre-purchase plan (annual commit)']]}))}
       ${field('Pack: credits / price per month', `<div style="display:flex;gap:6px">${inp('lic.copilot.packCredits','num',{step:1000})}${inp('lic.copilot.packPrice','money')}</div>`)}
       ${field('PAYG price per credit', inp('lic.copilot.paygPerCredit','money',{dec:4}))}
-      ${field('Pre-purchase discount on PAYG (%)', inp('lic.copilot.prepaidDiscount','num',{step:1}), '5% (entry tier) to 20% (largest tier)')}
+      ${field('Pre-purchase discount on PAYG (%)', inp('lic.copilot.prepaidDiscount','num',{step:1}), 'Confirm the applicable pre-purchase tier before quoting')}
     </div>
     <p class="small" style="margin-top:8px">Copilot Studio ${fmtN(R.cons.copilot.csNeed)}${R.cons.copilot.voiceMin?` (voice bot ${fmtN(R.cons.copilot.voiceCredits)})`:''} + D365 agents ${fmtN(R.cons.copilot.d365Need)} − Premium allowance used ${fmtN(R.cons.copilot.inclUsed)} = overage ${fmtN(R.cons.copilot.over)} → <b>${fmt(R.cons.copilot.cost)}/month</b> (${esc(R.cons.copilot.note)})</p>
   </div>
@@ -155,7 +155,7 @@ function renderLic(R){
       ${field('Voice reps needing Teams Phone (0 = auto)', inp('lic.tel.teamsUsers','num',{step:1}), `Auto: ${fmtN(R.lic.liveVoiceUsers)} voice agents & supervisors`)}
       ${field('Reps already licensed for Teams Phone (Microsoft 365 E5)', inp('lic.tel.e5Users','num',{step:1}), 'Reps also need a Teams licence (M365 / O365 suite or Teams Enterprise)')}
       ${t.mode==='teams-payg'
-        ? field('Pay-as-you-go Calling Plan per resource account', inp('lic.tel.paygRA','money'), 'Zone 1 (US, UK, CA) $3 · Zone 2 (most of Europe) $4')
+        ? field('Pay-as-you-go Calling Plan per resource account', inp('lic.tel.paygRA','money'), 'Confirm the price for the resource account country / zone')
           + field('Inbound on toll-free numbers (%)', inp('lic.tel.tollFreePct','num',{step:5}), 'Inbound to geographic numbers is included')
           + field('Toll-free inbound per minute', inp('lic.tel.tfIn','money',{dec:4}))
           + field('Outbound to mobile (%)', inp('lic.tel.outMobilePct','num',{step:5}))
@@ -173,7 +173,7 @@ function renderLic(R){
       ${field('Expected file (GB) — recordings, transcripts, attachments', inp('lic.dv.fileGB','num'))}
       ${field('Expected log (GB)', inp('lic.dv.logGB','num'))}
       ${field('Included DB: tenant + per user (GB)', `<div style="display:flex;gap:6px">${inp('lic.dv.inclDb','num')}${inp('lic.dv.inclDbPerUser','num',{step:.05})}</div>`)}
-      ${field('Included file: tenant + per user · per voice user (GB)', `<div style="display:flex;gap:6px">${inp('lic.dv.inclFile','num')}${inp('lic.dv.inclFilePerUser','num',{step:.5})}${inp('lic.dv.inclFileVoice','num',{step:1})}</div>`, 'Voice users: CC Voice, full CC and CS Premium (35 GB for call recording)')}
+      ${field('Included file: tenant + per user · per voice user (GB)', `<div style="display:flex;gap:6px">${inp('lic.dv.inclFile','num')}${inp('lic.dv.inclFilePerUser','num',{step:.5})}${inp('lic.dv.inclFileVoice','num',{step:1})}</div>`, `Voice users: CC Voice, full CC and CS Premium (${fmtN(d.inclFileVoice)} GB for call recording)`)}
       ${field('Included log (GB)', inp('lic.dv.inclLog','num'))}
       ${field('Price per GB / month: DB · file · log', `<div style="display:flex;gap:6px">${inp('lic.dv.pDb','money')}${inp('lic.dv.pFile','money')}${inp('lic.dv.pLog','money')}</div>`)}
     </div>

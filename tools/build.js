@@ -8,6 +8,9 @@ const src = p => path.join(root, 'src', p);
 const read = p => fs.readFileSync(p, 'utf8');
 const b64 = p => fs.readFileSync(p).toString('base64');
 const version = JSON.parse(read(path.join(root, 'package.json'))).version;
+const { loadPricing } = require('./pricing');
+const pricing = loadPricing(path.join(root, 'config', 'pricing.json'));
+const pricingJs = 'const PRICING=' + JSON.stringify(pricing).replace(/</g, '\\u003c') + ';\n';
 
 const brandIds = process.argv.slice(2).length ? process.argv.slice(2) : fs.readdirSync(path.join(root, 'brands')).filter(f => f.endsWith('.json')).map(f => f.replace('.json', ''));
 
@@ -35,8 +38,8 @@ for (const id of brandIds) {
     .replace('__BRAND_FOOTER__', expand(brand.footer));
   const BRAND = { id: brand.id, name: brand.name, mode: brand.mode, build: version, contact: brand.contact, partner: brand.partner || 'Partner', grades: brand.grades || null, gradesNote: brand.gradesNote || '', pdf: { ...brand.pdf, logoLight: 'data:image/png;base64,' + b64(src(brand.pdf.logoLight)), logoDark: 'data:image/png;base64,' + b64(src(brand.pdf.logoDark)) }, fontR: b64(src('assets/fonts/Ubuntu-Regular.ttf')), fontB: b64(src('assets/fonts/Ubuntu-Bold.ttf')) };
   const brandJs = 'const BRAND=' + JSON.stringify(BRAND) + ';\n';
-  try { new Function(brandJs + app); } catch (e) { console.error('Syntax error in app scripts:', e.message); process.exit(1); }
-  const out = html + vendors + `\n<script>\n${brandJs}${app}\n</script></body></html>`;
+  try { new Function(brandJs + pricingJs + app); } catch (e) { console.error('Syntax error in app scripts:', e.message); process.exit(1); }
+  const out = html + vendors + `\n<script>\n${brandJs}${pricingJs}${app}\n</script></body></html>`;
   fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
   const outFile = path.join(root, 'dist', brand.outFile);
   fs.writeFileSync(outFile, out);

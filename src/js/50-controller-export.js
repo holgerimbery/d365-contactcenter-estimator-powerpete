@@ -28,7 +28,7 @@ document.addEventListener('click', e=>{
 $('#btnReset').addEventListener('click', ()=>{ const snap=clone(S); S=DEFAULT_STATE(); render(); toast('All inputs reset to defaults.', ()=>{ S=snap; render(); }); });
 $('#btnSave').addEventListener('click', ()=>{ const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}); dl(blob, fname('json')); });
 $('#btnLoad').addEventListener('click', ()=>$('#fileLoad').click());
-$('#fileLoad').addEventListener('change', e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const o=JSON.parse(r.result); S=migrateState(deepMerge(DEFAULT_STATE(), o)); render(); }catch(err){ toast('Could not read this file: '+err.message); } }; r.readAsText(f); e.target.value=''; });
+$('#fileLoad').addEventListener('change', e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const o=JSON.parse(r.result); S=migrateState(deepMerge(DEFAULT_STATE(), o), o); render(); }catch(err){ toast('Could not read this file: '+err.message); } }; r.readAsText(f); e.target.value=''; });
 function deepMerge(base, o){ if(Array.isArray(o)) return o; if(o&&typeof o==='object'){ const out={...base}; Object.keys(o).forEach(k=>{ out[k]= (base&&typeof base[k]==='object'&&!Array.isArray(base[k])) ? deepMerge(base[k], o[k]) : o[k]; }); return out; } return o; }
 function fname(ext){ return ((S.meta.client||'D365-CC-estimate').replace(/[^a-z0-9]+/gi,'-'))+'-'+S.meta.version.replace(/[^a-z0-9.]+/gi,'')+'.'+ext; }
 function dl(blob, name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500); }
